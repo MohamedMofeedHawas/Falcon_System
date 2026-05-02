@@ -1,0 +1,102 @@
+name: falcon_system
+description: "FALCON-AIS - نظام تقييم المطارات الميداني - الكلية الجوية المصرية"
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State Management
+  flutter_bloc: 
+  equatable:
+
+  # Database
+  hive: 
+  hive_flutter: 
+  shared_preferences: 
+
+  # PDF & Printing
+  pdf:
+  printing: 
+
+  # File & Path
+  path_provider:
+  file_picker: 
+
+  # Charts
+  fl_chart: 
+
+  # URL Launcher (for Help screen)
+  url_launcher:
+
+  # UUID
+  uuid: 
+
+  # Image
+  image_picker: 
+
+  # Animations
+  lottie: 
+  animate_do: 
+  
+
+  # Signature
+  signature: 
+ 
+
+  # Date formatting in Arabic
+  intl: 
+
+  # Responsive
+  responsive_framework: 
+
+  # Icons
+  cupertino_icons: 
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: 
+  hive_generator: 
+  build_runner: 
+
+flutter:
+  uses-material-design: true
+
+  fonts:
+    - family: Tajawal
+      fonts:
+        - asset: assets/fonts/Tajawal-Regular.ttf
+        - asset: assets/fonts/Tajawal-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Tajawal-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Tajawal-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/Tajawal-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Tajawal-ExtraLight.ttf
+          weight: 200
+        - asset: assets/fonts/Tajawal-Black.ttf
+          weight: 900
+    - family: Amiri
+      fonts:
+        - asset: assets/fonts/Amiri-Regular.ttf
+        - asset: assets/fonts/Amiri-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Amiri-Italic.ttf
+          style: italic
+        - asset: assets/fonts/Amiri-BoldItalic.ttf
+          weight: 700
+          style: italic
+
+  assets:
+    - assets/fonts/
+   
