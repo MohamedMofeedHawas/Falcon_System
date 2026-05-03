@@ -6,10 +6,9 @@ import 'package:uuid/uuid.dart';
 part 'manager_state.dart';
 
 class ManagerCubit extends Cubit<ManagerState> {
-  final HiveService _hiveService;
   final Uuid _uuid = const Uuid();
 
-  ManagerCubit(this._hiveService) : super(ManagerInitial()) {
+  ManagerCubit() : super(ManagerInitial()) {
     loadManagers();
   }
 

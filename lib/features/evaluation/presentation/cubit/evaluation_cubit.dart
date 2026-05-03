@@ -10,7 +10,6 @@ class EvaluationCubit extends Cubit<EvaluationState> {
   EvaluationCubit() : super(EvaluationInitial());
 
   Box<dynamic> get _evaluationBox => Hive.box(HiveKeys.evaluationReportsBox);
-  Box<dynamic> get _aerodromeBox => Hive.box(HiveKeys.aerodromesBox);
 
   Future<void> loadEvaluations() async {
     emit(EvaluationLoading());

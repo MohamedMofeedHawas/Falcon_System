@@ -34,8 +34,6 @@ class AdminProfileAdapter extends TypeAdapter<AdminProfile> {
       licenseIssueDate: fields[14] as DateTime?,
       licenseExpiryDate: fields[15] as DateTime?,
       photo: fields[16] as String?,
-      createdAt: fields[17] as DateTime?,
-      updatedAt: fields[18] as DateTime?,
       password: fields[19] as String?,
       whatsappNumbers: (fields[20] as List?)?.cast<String>(),
       residenceAddress: fields[21] as String?,
@@ -44,13 +42,17 @@ class AdminProfileAdapter extends TypeAdapter<AdminProfile> {
       adminSignatureImage: fields[24] as Uint8List?,
       adminSignatureMode: fields[25] as String?,
       adminSignatureSavedAt: fields[26] as DateTime?,
+      dateOfBirth: fields[27] as DateTime?,
+      licenseIssuingAuthority: fields[28] as String?,
+      createdAt: fields[17] as DateTime?,
+      updatedAt: fields[18] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, AdminProfile obj) {
     writer
-      ..writeByte(27)
+      ..writeByte(29)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -104,7 +106,11 @@ class AdminProfileAdapter extends TypeAdapter<AdminProfile> {
       ..writeByte(25)
       ..write(obj.adminSignatureMode)
       ..writeByte(26)
-      ..write(obj.adminSignatureSavedAt);
+      ..write(obj.adminSignatureSavedAt)
+      ..writeByte(27)
+      ..write(obj.dateOfBirth)
+      ..writeByte(28)
+      ..write(obj.licenseIssuingAuthority);
   }
 
   @override

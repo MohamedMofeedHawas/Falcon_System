@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:falcon_system/data/sections/taxiway_evaluation.dart';
+import 'package:falcon_system/data/sections/taxiway_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
@@ -66,7 +68,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
 
   // Section Evaluations
   Map<String, dynamic> _runwayEvaluation = {};
-  Map<String, dynamic> _taxiwayEvaluation = {};
+  TaxiwayEvaluation _taxiwayModel_2 = TaxiwayEvaluation();
   Map<String, dynamic> _apronEvaluation = {};
   Map<String, dynamic> _rffsEvaluation = {};
   Map<String, dynamic> _metEvaluation = {};
@@ -203,7 +205,12 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
     _managerSignature = evaluation.managerSignature;
     _headSignature = evaluation.headSignature;
     _runwayEvaluation = evaluation.runwayEvaluation;
-    _taxiwayEvaluation = evaluation.taxiwayEvaluation;
+
+    // Handle taxiwayEvaluation - it could be a Map or a TaxiwayEvaluation object
+    _taxiwayModel_2 = TaxiwayEvaluation.fromCompatibilityMap(
+      evaluation.taxiwayEvaluation,
+    );
+
     _apronEvaluation = evaluation.apronEvaluation;
     _rffsEvaluation = evaluation.rffsEvaluation;
     _metEvaluation = evaluation.metEvaluation;
@@ -305,7 +312,12 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
               label: 'المطار',
               hint: 'اختر المطار',
               items: _aerodromes
-                  .map((a) => DropdownMenuItem<String>(value: a.id, child: Text(a.arabicName)))
+                  .map(
+                    (a) => DropdownMenuItem<String>(
+                      value: a.id,
+                      child: Text(a.arabicName),
+                    ),
+                  )
                   .toList(),
               value: _selectedAerodromeId,
               onChanged: (value) {
@@ -316,14 +328,20 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                   _selectedAerodromeName = selected.arabicName;
                 });
               },
-              validator: (value) => value == null ? 'Please select an aerodrome' : null,
+              validator: (value) =>
+                  value == null ? 'Please select an aerodrome' : null,
             ),
             const SizedBox(height: 16),
             CustomDropdown<String>(
               label: 'مدير المطار',
               hint: 'اختر مدير المطار',
               items: _managers
-                  .map((m) => DropdownMenuItem<String>(value: m.id, child: Text(m.fullName)))
+                  .map(
+                    (m) => DropdownMenuItem<String>(
+                      value: m.id,
+                      child: Text(m.fullName),
+                    ),
+                  )
                   .toList(),
               value: _selectedManagerId,
               onChanged: (value) {
@@ -334,14 +352,20 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                   _selectedManagerName = selected.fullName;
                 });
               },
-              validator: (value) => value == null ? '���� ������ ���� ������' : null,
+              validator: (value) =>
+                  value == null ? '���� ������ ���� ������' : null,
             ),
             const SizedBox(height: 16),
             CustomDropdown<String>(
               label: 'رئيس الفريق',
               hint: 'اختر رئيس الفريق',
               items: _heads
-                  .map((h) => DropdownMenuItem<String>(value: h.id, child: Text(h.fullName)))
+                  .map(
+                    (h) => DropdownMenuItem<String>(
+                      value: h.id,
+                      child: Text(h.fullName),
+                    ),
+                  )
                   .toList(),
               value: _selectedHeadId,
               onChanged: (value) {
@@ -352,7 +376,8 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                   _selectedHeadName = selected.fullName;
                 });
               },
-              validator: (value) => value == null ? 'Please select a team head' : null,
+              validator: (value) =>
+                  value == null ? 'Please select a team head' : null,
             ),
             const SizedBox(height: 16),
             CustomDropdown<String>(
@@ -360,7 +385,12 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
               hint: 'اختر عضو الفريق',
               items: _members
                   .where((m) => !_selectedMemberIds.contains(m.id))
-                  .map((m) => DropdownMenuItem<String>(value: m.id, child: Text(m.fullName)))
+                  .map(
+                    (m) => DropdownMenuItem<String>(
+                      value: m.id,
+                      child: Text(m.fullName),
+                    ),
+                  )
                   .toList(),
               value: _pendingMemberId,
               onChanged: (value) {
@@ -369,7 +399,10 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                 setState(() {
                   _pendingMemberId = null;
                   _selectedMemberIds = [..._selectedMemberIds, selected.id];
-                  _selectedMemberNames = [..._selectedMemberNames, selected.fullName];
+                  _selectedMemberNames = [
+                    ..._selectedMemberNames,
+                    selected.fullName,
+                  ];
                 });
               },
             ),
@@ -386,8 +419,12 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                         final index = _selectedMemberNames.indexOf(name);
                         if (index == -1) return;
                         setState(() {
-                          _selectedMemberNames = List<String>.from(_selectedMemberNames)..removeAt(index);
-                          _selectedMemberIds = List<String>.from(_selectedMemberIds)..removeAt(index);
+                          _selectedMemberNames = List<String>.from(
+                            _selectedMemberNames,
+                          )..removeAt(index);
+                          _selectedMemberIds = List<String>.from(
+                            _selectedMemberIds,
+                          )..removeAt(index);
                         });
                       },
                     ),
@@ -400,7 +437,12 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
               label: 'الطائرات',
               hint: 'اختر الطائرة',
               items: _aircraft
-                  .map((a) => DropdownMenuItem<String>(value: a.id, child: Text(' - ')))
+                  .map(
+                    (a) => DropdownMenuItem<String>(
+                      value: a.id,
+                      child: Text(' - '),
+                    ),
+                  )
                   .toList(),
               value: _selectedAircraftId,
               onChanged: (value) {
@@ -424,14 +466,18 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
               child: InputDecorator(
                 decoration: InputDecoration(
                   labelText: 'تاريخ التقييم',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   filled: true,
                   fillColor: AppColors.card,
                   suffixIcon: const Icon(Icons.calendar_today),
                 ),
                 child: Text(
                   app_date_utils.DateUtils.formatToArabic(_evaluationDate),
-                  style: AppFonts.bodyMedium.copyWith(color: AppColors.textPrimary),
+                  style: AppFonts.bodyMedium.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
             ),
@@ -448,7 +494,8 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
       ),
     );
   }
-Step _buildRunwayStep() {
+
+  Step _buildRunwayStep() {
     return Step(
       title: const Text('المدرجات'),
       content: _buildEvaluationSection(
@@ -462,13 +509,13 @@ Step _buildRunwayStep() {
 
   Step _buildTaxiwayStep() {
     return Step(
-      title: const Text('المسارات'),
-      content: _buildEvaluationSection(
-        'تقييم المسارات',
-        _taxiwayItems,
-        _taxiwayEvaluation,
-        (key, value) => setState(() => _taxiwayEvaluation[key] = value),
+      title: const Text('ممرات التاكسي'),
+      content: TaxiwaySectionWidget(
+        evaluation: _taxiwayModel_2,
+        onChanged: (updated) => setState(() => _taxiwayModel_2 = updated),
       ),
+      isActive: _currentStep >= 2,
+      state: _currentStep > 2 ? StepState.complete : StepState.indexed,
     );
   }
 
@@ -595,7 +642,7 @@ Step _buildRunwayStep() {
     final cubit = context.read<EvaluationCubit>();
     final totalScore = cubit.calculateTotalScore({
       'runways': _runwayEvaluation,
-      'taxiways': _taxiwayEvaluation,
+      'taxiways': _taxiwayModel_2.toCompatibilityMap(),
       'aprons': _apronEvaluation,
       'rescueFire': _rffsEvaluation,
       'meteorological': _metEvaluation,
@@ -776,7 +823,9 @@ Step _buildRunwayStep() {
     if (picked != null) {
       setState(() => _evaluationDate = picked);
     }
-  } void _submitEvaluation() {
+  }
+
+  void _submitEvaluation() {
     if (_managerSignature == null || _headSignature == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى التوقيع من جميع الأطراف')),
@@ -789,7 +838,7 @@ Step _buildRunwayStep() {
     final cubit = context.read<EvaluationCubit>();
     final totalScore = cubit.calculateTotalScore({
       'runways': _runwayEvaluation,
-      'taxiways': _taxiwayEvaluation,
+      'taxiways': _taxiwayModel_2.toCompatibilityMap(),
       'aprons': _apronEvaluation,
       'rescueFire': _rffsEvaluation,
       'meteorological': _metEvaluation,
@@ -824,7 +873,7 @@ Step _buildRunwayStep() {
       createdAt: widget.evaluation?.createdAt,
       updatedAt: DateTime.now(),
       runwayEvaluation: _runwayEvaluation,
-      taxiwayEvaluation: _taxiwayEvaluation,
+      taxiwayEvaluation: _taxiwayModel_2.toCompatibilityMap(),
       apronEvaluation: _apronEvaluation,
       rffsEvaluation: _rffsEvaluation,
       metEvaluation: _metEvaluation,
@@ -842,4 +891,3 @@ Step _buildRunwayStep() {
     });
   }
 }
-

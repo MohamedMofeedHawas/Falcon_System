@@ -5,12 +5,11 @@ import 'package:falcon_system/data/models/airport_manager.dart';
 import 'package:falcon_system/data/models/evaluation_report.dart';
 import 'package:falcon_system/data/models/inspection_head.dart';
 import 'package:falcon_system/data/models/inspection_member.dart';
+import 'package:falcon_system/data/sections/taxiway_element_score.dart';
+import 'package:falcon_system/data/sections/taxiway_evaluation.dart';
+
 import 'package:hive_flutter/hive_flutter.dart';
-
 import '../constants/hive_keys.dart';
-
-
-
 
 class HiveService {
   static bool _initialized = false;
@@ -38,6 +37,8 @@ class HiveService {
     Hive.registerAdapter(InspectionMemberAdapter());
     Hive.registerAdapter(AircraftAdapter());
     Hive.registerAdapter(EvaluationReportAdapter());
+    Hive.registerAdapter(TaxiwayElementScoreAdapter()); // typeId: 7
+    Hive.registerAdapter(TaxiwayEvaluationAdapter());
   }
 
   static Future<void> _openBoxes() async {
@@ -66,13 +67,16 @@ class HiveService {
   }
 
   // ── Box getters ───────────────────────────────────────────────────────────
-  static Box<dynamic> get adminBox       => Hive.box(HiveKeys.adminProfileBox);
-  static Box<dynamic> get aerodromeBox   => Hive.box(HiveKeys.aerodromesBox);
-  static Box<dynamic> get managerBox     => Hive.box(HiveKeys.airportManagersBox);
-  static Box<dynamic> get inspectionHeadBox   => Hive.box(HiveKeys.inspectionHeadBox);
-  static Box<dynamic> get inspectionMemberBox => Hive.box(HiveKeys.inspectionTeamBox);
-  static Box<dynamic> get aircraftBox    => Hive.box(HiveKeys.aircraftBox);
-  static Box<dynamic> get evaluationBox  => Hive.box(HiveKeys.evaluationReportsBox);
+  static Box<dynamic> get adminBox => Hive.box(HiveKeys.adminProfileBox);
+  static Box<dynamic> get aerodromeBox => Hive.box(HiveKeys.aerodromesBox);
+  static Box<dynamic> get managerBox => Hive.box(HiveKeys.airportManagersBox);
+  static Box<dynamic> get inspectionHeadBox =>
+      Hive.box(HiveKeys.inspectionHeadBox);
+  static Box<dynamic> get inspectionMemberBox =>
+      Hive.box(HiveKeys.inspectionTeamBox);
+  static Box<dynamic> get aircraftBox => Hive.box(HiveKeys.aircraftBox);
+  static Box<dynamic> get evaluationBox =>
+      Hive.box(HiveKeys.evaluationReportsBox);
 
   // ── Admin Profile ─────────────────────────────────────────────────────────
 
@@ -93,8 +97,7 @@ class HiveService {
 
     // ② Legacy 'admin' key — check if email matches
     final legacy = adminBox.get('admin');
-    if (legacy is AdminProfile &&
-        legacy.email.trim().toLowerCase() == key) {
+    if (legacy is AdminProfile && legacy.email.trim().toLowerCase() == key) {
       return legacy;
     }
 

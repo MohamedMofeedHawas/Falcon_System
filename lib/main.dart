@@ -7,10 +7,9 @@ import 'package:falcon_system/features/manager/presentation/cubit/manager_cubit.
 import 'package:falcon_system/features/splash/presentation/screens/splash_screen.dart';
 import 'package:falcon_system/features/team/presentation/cubit/team_cubit.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,7 +37,7 @@ class FalconAISApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => AerodromeCubit()),
         BlocProvider(create: (_) => EvaluationCubit()),
-        BlocProvider(create: (_) => ManagerCubit(HiveService())),
+        BlocProvider(create: (_) => ManagerCubit()),
         BlocProvider(create: (_) => TeamCubit()),
         BlocProvider(create: (_) => AircraftCubit()),
       ],

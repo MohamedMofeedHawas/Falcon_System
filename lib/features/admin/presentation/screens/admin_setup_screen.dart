@@ -612,6 +612,8 @@ class _AdminSetupScreenState extends State<AdminSetupScreen> {
                 ),
                 const SizedBox(height: 12),
                 CustomTextField(
+                  maxLength: 11,
+                  counterText: "",
                   label: AppStrings.whatsappNumbers,
                   controller: _whatsappCtrl,
                   keyboardType: TextInputType.phone,
