@@ -48,7 +48,8 @@ dependencies:
   
 
   # Signature
-  signature: 
+  signature:
+  font_awesome_flutter: 
  
 
   # Date formatting in Arabic

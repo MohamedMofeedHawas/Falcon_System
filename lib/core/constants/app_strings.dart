@@ -4,6 +4,7 @@ class AppStrings {
   static const String systemTitle = 'FALCON-AIS';
   static const String subtitle = 'الكلية الجوية المصرية — قسم فحص المطارات';
   static const String version = '1.0.0';
+  static const String optional = 'اختياري';
   static String get copyright =>
       '© ${DateTime.now().year} الكلية الجوية المصرية — جميع الحقوق محفوظة';
   static const String developer = 'تطوير: محمد مفيد حواس';
@@ -45,6 +46,26 @@ class AppStrings {
   static const String expired = 'منتهية';
   static const String save = 'حفظ';
   static const String savedSuccessfully = 'تم حفظ بياناتك بنجاح ✓';
+
+  // Login Screen
+  static const String login = 'تسجيل الدخول';
+  static const String username = 'اسم المستخدم';
+  static const String password = 'كلمة المرور';
+  static const String confirmPassword = 'تأكيد كلمة المرور';
+  static const String dontHaveAccount = 'ليس لديك حساب؟';
+  static const String createAccount = 'إنشاء حساب';
+  static const String signIn = 'دخول';
+  static const String loginSuccess = 'تم تسجيل الدخول بنجاح ✓';
+  static const String invalidCredentials = 'بيانات دخول غير صحيحة';
+
+  // Admin Setup Additional
+  static const String registrationData = 'بيانات التسجيل';
+  static const String whatsappNumbers = 'أرقام الواتس';
+  static const String residenceAddress = 'عنوان الإقامة الحالي';
+  static const String customNationality = 'أدخل الجنسية';
+  static const String remainingValidity = 'المدة المتبقية';
+  static const String licenseValidityError =
+      'تاريخ الانتهاء يجب أن يكون بعد تاريخ البداية';
 
   // Nationalities
   static const List<String> nationalities = [

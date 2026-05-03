@@ -2,9 +2,7 @@
 
 import 'dart:math' as math;
 
-import 'package:falcon_system/core/services/hive_service.dart';
-import 'package:falcon_system/features/admin/presentation/screens/admin_setup_screen.dart';
-import 'package:falcon_system/features/dashboard/presentation/screens/dashboard_screen.dart';
+import 'package:falcon_system/features/login/presentation/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 
 // ── Exact Air Force palette ──────────────────────────────────────────────────
@@ -209,12 +207,9 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _navigateToNextScreen() {
-    final hasAdminProfile = HiveService.adminBox.isNotEmpty;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (_, _, _) => hasAdminProfile
-            ? const DashboardScreen()
-            : const AdminSetupScreen(),
+        pageBuilder: (_, _, _) => const LoginScreen(),
         transitionsBuilder: (_, anim, _, child) =>
             FadeTransition(opacity: anim, child: child),
         transitionDuration: const Duration(milliseconds: 500),

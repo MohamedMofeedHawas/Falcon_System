@@ -1,5 +1,5 @@
+import 'dart:typed_data';
 import 'package:hive/hive.dart';
-
 import '../../core/constants/hive_keys.dart';
 
 part 'admin_profile.g.dart';
@@ -8,60 +8,62 @@ part 'admin_profile.g.dart';
 class AdminProfile extends HiveObject {
   @HiveField(0)
   String id;
-
   @HiveField(1)
   String fullName;
-
   @HiveField(2)
   String email;
-
   @HiveField(3)
   String nationality;
-
   @HiveField(4)
   String nationalId;
-
   @HiveField(5)
   String? rank;
-
   @HiveField(6)
-  int? age;
-
+  int? age; // kept for backward compat — prefer dateOfBirth
   @HiveField(7)
   int? flightHours;
-
   @HiveField(8)
   List<String> phones;
-
   @HiveField(9)
   String? governorate;
-
   @HiveField(10)
   String? workplace;
-
   @HiveField(11)
   DateTime? employmentDate;
-
   @HiveField(12)
   bool hasLicense;
-
   @HiveField(13)
   String? licenseNumber;
-
   @HiveField(14)
   DateTime? licenseIssueDate;
-
   @HiveField(15)
   DateTime? licenseExpiryDate;
-
   @HiveField(16)
   String? photo;
-
   @HiveField(17)
   DateTime createdAt;
-
   @HiveField(18)
   DateTime updatedAt;
+  @HiveField(19)
+  String? password;
+  @HiveField(20)
+  List<String> whatsappNumbers;
+  @HiveField(21)
+  String? residenceAddress;
+  @HiveField(22)
+  String? customNationality;
+  @HiveField(23)
+  String? adminSignatureText;
+  @HiveField(24)
+  Uint8List? adminSignatureImage;
+  @HiveField(25)
+  String? adminSignatureMode;
+  @HiveField(26)
+  DateTime? adminSignatureSavedAt;
+  @HiveField(27)
+  DateTime? dateOfBirth; // ← NEW
+  @HiveField(28)
+  String? licenseIssuingAuthority; // ← NEW
 
   AdminProfile({
     required this.id,
@@ -81,9 +83,20 @@ class AdminProfile extends HiveObject {
     this.licenseIssueDate,
     this.licenseExpiryDate,
     this.photo,
+    this.password,
+    List<String>? whatsappNumbers,
+    this.residenceAddress,
+    this.customNationality,
+    this.adminSignatureText,
+    this.adminSignatureImage,
+    this.adminSignatureMode,
+    this.adminSignatureSavedAt,
+    this.dateOfBirth,
+    this.licenseIssuingAuthority,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) : phones = phones ?? [],
+       whatsappNumbers = whatsappNumbers ?? [],
        createdAt = createdAt ?? DateTime.now(),
        updatedAt = updatedAt ?? DateTime.now();
 
@@ -105,6 +118,16 @@ class AdminProfile extends HiveObject {
     DateTime? licenseIssueDate,
     DateTime? licenseExpiryDate,
     String? photo,
+    String? password,
+    List<String>? whatsappNumbers,
+    String? residenceAddress,
+    String? customNationality,
+    String? adminSignatureText,
+    Uint8List? adminSignatureImage,
+    String? adminSignatureMode,
+    DateTime? adminSignatureSavedAt,
+    DateTime? dateOfBirth,
+    String? licenseIssuingAuthority,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -126,66 +149,111 @@ class AdminProfile extends HiveObject {
       licenseIssueDate: licenseIssueDate ?? this.licenseIssueDate,
       licenseExpiryDate: licenseExpiryDate ?? this.licenseExpiryDate,
       photo: photo ?? this.photo,
+      password: password ?? this.password,
+      whatsappNumbers: whatsappNumbers ?? this.whatsappNumbers,
+      residenceAddress: residenceAddress ?? this.residenceAddress,
+      customNationality: customNationality ?? this.customNationality,
+      adminSignatureText: adminSignatureText ?? this.adminSignatureText,
+      adminSignatureImage: adminSignatureImage ?? this.adminSignatureImage,
+      adminSignatureMode: adminSignatureMode ?? this.adminSignatureMode,
+      adminSignatureSavedAt:
+          adminSignatureSavedAt ?? this.adminSignatureSavedAt,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      licenseIssuingAuthority:
+          licenseIssuingAuthority ?? this.licenseIssuingAuthority,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'fullName': fullName,
-      'email': email,
-      'nationality': nationality,
-      'nationalId': nationalId,
-      'rank': rank,
-      'age': age,
-      'flightHours': flightHours,
-      'phones': phones,
-      'governorate': governorate,
-      'workplace': workplace,
-      'employmentDate': employmentDate?.toIso8601String(),
-      'hasLicense': hasLicense,
-      'licenseNumber': licenseNumber,
-      'licenseIssueDate': licenseIssueDate?.toIso8601String(),
-      'licenseExpiryDate': licenseExpiryDate?.toIso8601String(),
-      'photo': photo,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
-    };
+  /// Computed age from dateOfBirth (falls back to stored int age)
+  int? get computedAge {
+    if (dateOfBirth == null) return age;
+    final now = DateTime.now();
+    int years = now.year - dateOfBirth!.year;
+    if (now.month < dateOfBirth!.month ||
+        (now.month == dateOfBirth!.month && now.day < dateOfBirth!.day)) {
+      years--;
+    }
+    return years;
   }
 
-  factory AdminProfile.fromJson(Map<String, dynamic> json) {
-    return AdminProfile(
-      id: json['id'] as String,
-      fullName: json['fullName'] as String,
-      email: json['email'] as String,
-      nationality: json['nationality'] as String,
-      nationalId: json['nationalId'] as String,
-      rank: json['rank'] as String?,
-      age: json['age'] as int?,
-      flightHours: json['flightHours'] as int?,
-      phones: (json['phones'] as List<dynamic>?)?.cast<String>() ?? [],
-      governorate: json['governorate'] as String?,
-      workplace: json['workplace'] as String?,
-      employmentDate: json['employmentDate'] != null
-          ? DateTime.parse(json['employmentDate'] as String)
-          : null,
-      hasLicense: json['hasLicense'] as bool? ?? false,
-      licenseNumber: json['licenseNumber'] as String?,
-      licenseIssueDate: json['licenseIssueDate'] != null
-          ? DateTime.parse(json['licenseIssueDate'] as String)
-          : null,
-      licenseExpiryDate: json['licenseExpiryDate'] != null
-          ? DateTime.parse(json['licenseExpiryDate'] as String)
-          : null,
-      photo: json['photo'] as String?,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : DateTime.now(),
-    );
-  }
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'fullName': fullName,
+    'email': email,
+    'nationality': nationality,
+    'nationalId': nationalId,
+    'rank': rank,
+    'age': age,
+    'flightHours': flightHours,
+    'phones': phones,
+    'governorate': governorate,
+    'workplace': workplace,
+    'employmentDate': employmentDate?.toIso8601String(),
+    'hasLicense': hasLicense,
+    'licenseNumber': licenseNumber,
+    'licenseIssueDate': licenseIssueDate?.toIso8601String(),
+    'licenseExpiryDate': licenseExpiryDate?.toIso8601String(),
+    'photo': photo,
+    'password': password,
+    'whatsappNumbers': whatsappNumbers,
+    'residenceAddress': residenceAddress,
+    'customNationality': customNationality,
+    'adminSignatureText': adminSignatureText,
+    'adminSignatureImage': adminSignatureImage,
+    'adminSignatureMode': adminSignatureMode,
+    'adminSignatureSavedAt': adminSignatureSavedAt?.toIso8601String(),
+    'dateOfBirth': dateOfBirth?.toIso8601String(),
+    'licenseIssuingAuthority': licenseIssuingAuthority,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
+
+  factory AdminProfile.fromJson(Map<String, dynamic> json) => AdminProfile(
+    id: json['id'] as String,
+    fullName: json['fullName'] as String,
+    email: json['email'] as String,
+    nationality: json['nationality'] as String,
+    nationalId: json['nationalId'] as String,
+    rank: json['rank'] as String?,
+    age: json['age'] as int?,
+    flightHours: json['flightHours'] as int?,
+    phones: (json['phones'] as List<dynamic>?)?.cast<String>() ?? [],
+    governorate: json['governorate'] as String?,
+    workplace: json['workplace'] as String?,
+    employmentDate: json['employmentDate'] != null
+        ? DateTime.parse(json['employmentDate'] as String)
+        : null,
+    hasLicense: json['hasLicense'] as bool? ?? false,
+    licenseNumber: json['licenseNumber'] as String?,
+    licenseIssueDate: json['licenseIssueDate'] != null
+        ? DateTime.parse(json['licenseIssueDate'] as String)
+        : null,
+    licenseExpiryDate: json['licenseExpiryDate'] != null
+        ? DateTime.parse(json['licenseExpiryDate'] as String)
+        : null,
+    photo: json['photo'] as String?,
+    password: json['password'] as String?,
+    whatsappNumbers:
+        (json['whatsappNumbers'] as List<dynamic>?)?.cast<String>() ?? [],
+    residenceAddress: json['residenceAddress'] as String?,
+    customNationality: json['customNationality'] as String?,
+    adminSignatureText: json['adminSignatureText'] as String?,
+    adminSignatureImage: json['adminSignatureImage'] as Uint8List?,
+    adminSignatureMode: json['adminSignatureMode'] as String?,
+    adminSignatureSavedAt: json['adminSignatureSavedAt'] != null
+        ? DateTime.parse(json['adminSignatureSavedAt'] as String)
+        : null,
+    dateOfBirth: json['dateOfBirth'] != null
+        ? DateTime.parse(json['dateOfBirth'] as String)
+        : null,
+    licenseIssuingAuthority: json['licenseIssuingAuthority'] as String?,
+    createdAt: json['createdAt'] != null
+        ? DateTime.parse(json['createdAt'] as String)
+        : DateTime.now(),
+    updatedAt: json['updatedAt'] != null
+        ? DateTime.parse(json['updatedAt'] as String)
+        : DateTime.now(),
+  );
 }
