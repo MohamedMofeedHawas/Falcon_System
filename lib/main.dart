@@ -23,7 +23,7 @@ void main() async {
   ]);
 
   // Initialize Hive
-  await HiveService.init();
+await HiveService.init();
 
   runApp(const FalconAISApp());
 }

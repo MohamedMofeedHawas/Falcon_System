@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:falcon_system/data/sections/met_evaluation.dart';
+import 'package:falcon_system/data/sections/met_section_widget.dart';
 import 'package:falcon_system/data/sections/taxiway_evaluation.dart';
 import 'package:falcon_system/data/sections/taxiway_section.dart';
 import 'package:flutter/material.dart';
@@ -71,7 +73,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
   TaxiwayEvaluation _taxiwayModel_2 = TaxiwayEvaluation();
   Map<String, dynamic> _apronEvaluation = {};
   Map<String, dynamic> _rffsEvaluation = {};
-  Map<String, dynamic> _metEvaluation = {};
+      MetEvaluation _metModel = MetEvaluation();
   Map<String, dynamic> _navaidsEvaluation = {};
   Map<String, dynamic> _operationalEvaluation = {};
   Map<String, dynamic> _smsEvaluation = {};
@@ -213,7 +215,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
 
     _apronEvaluation = evaluation.apronEvaluation;
     _rffsEvaluation = evaluation.rffsEvaluation;
-    _metEvaluation = evaluation.metEvaluation;
+    _metModel = MetEvaluation.fromCompatibilityMap(evaluation.metEvaluation);
     _navaidsEvaluation = evaluation.navaidsEvaluation;
     _operationalEvaluation = evaluation.operationalEvaluation;
     _smsEvaluation = evaluation.smsEvaluation;
@@ -543,15 +545,15 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
     );
   }
 
-  Step _buildMETStep() {
+Step _buildMETStep() {
     return Step(
       title: const Text('الأرصاد الجوية'),
-      content: _buildEvaluationSection(
-        'تقييم الأرصاد الجوية',
-        _metItems,
-        _metEvaluation,
-        (key, value) => setState(() => _metEvaluation[key] = value),
+      content: MetSectionWidget(
+        evaluation: _metModel,
+        onChanged: (updated) => setState(() => _metModel = updated),
       ),
+      isActive: _currentStep >= 5,
+      state: _currentStep > 5 ? StepState.complete : StepState.indexed,
     );
   }
 
@@ -645,7 +647,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
       'taxiways': _taxiwayModel_2.toCompatibilityMap(),
       'aprons': _apronEvaluation,
       'rescueFire': _rffsEvaluation,
-      'meteorological': _metEvaluation,
+      'meteorological': _metModel.toCompatibilityMap(),
       'navigationalAids': _navaidsEvaluation,
       'atc': _operationalEvaluation,
       'security': _smsEvaluation,
@@ -797,7 +799,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
 
   void _nextStep() {
     if (_currentStep == 0) {
-      if (_selectedAerodromeName == null ||
+      if (_selectedAerodromeName != null ||
           _selectedManagerName == null ||
           _selectedHeadName == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -841,7 +843,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
       'taxiways': _taxiwayModel_2.toCompatibilityMap(),
       'aprons': _apronEvaluation,
       'rescueFire': _rffsEvaluation,
-      'meteorological': _metEvaluation,
+      'meteorological': _metModel.toCompatibilityMap(),
       'navigationalAids': _navaidsEvaluation,
       'atc': _operationalEvaluation,
       'security': _smsEvaluation,
@@ -876,7 +878,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
       taxiwayEvaluation: _taxiwayModel_2.toCompatibilityMap(),
       apronEvaluation: _apronEvaluation,
       rffsEvaluation: _rffsEvaluation,
-      metEvaluation: _metEvaluation,
+    metEvaluation: _metModel.toCompatibilityMap(),
       navaidsEvaluation: _navaidsEvaluation,
       operationalEvaluation: _operationalEvaluation,
       smsEvaluation: _smsEvaluation,
