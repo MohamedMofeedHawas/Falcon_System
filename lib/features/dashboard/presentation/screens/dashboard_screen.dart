@@ -131,7 +131,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 _buildMenuItem(
                   icon: Icons.group_outlined,
-                  label: 'فريق الفحص',
+                  label: 'لجنة الفحص والتفتيش',
                   index: 3,
                 ),
                 _buildMenuItem(
@@ -329,7 +329,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               StatCard(
                 icon: Icons.group,
-                label: 'فريق الفحص',
+                label: 'أعضاء لجنة الفحص والتفتيش',
                 value: HiveService.inspectionMemberBox.length.toString(),
                 sublabel: 'عضو',
                 iconColor: AppColors.warning,

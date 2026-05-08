@@ -6,6 +6,8 @@ import 'package:falcon_system/data/sections/met_evaluation.dart';
 import 'package:falcon_system/data/sections/met_section_widget.dart';
 import 'package:falcon_system/data/sections/rffs_evaluation.dart';
 import 'package:falcon_system/data/sections/rffs_section_widget.dart';
+import 'package:falcon_system/data/sections/sms_evaluation.dart';
+import 'package:falcon_system/data/sections/sms_section_widget.dart';
 import 'package:falcon_system/data/sections/taxiway_evaluation.dart';
 import 'package:falcon_system/data/sections/taxiway_section.dart';
 import 'package:flutter/material.dart';
@@ -75,12 +77,12 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
   // Section Evaluations
   Map<String, dynamic> _runwayEvaluation = {};
   TaxiwayEvaluation _taxiwayModel_2 = TaxiwayEvaluation();
-ApronEvaluation _apronEvaluation = ApronEvaluation();
+  ApronEvaluation _apronEvaluation = ApronEvaluation();
   RffsEvaluation _rffsModel = RffsEvaluation();
   MetEvaluation _metModel = MetEvaluation();
   Map<String, dynamic> _navaidsEvaluation = {};
   Map<String, dynamic> _operationalEvaluation = {};
-  Map<String, dynamic> _smsEvaluation = {};
+  SmsEvaluation _smsModel = SmsEvaluation();
   Map<String, dynamic> _documentsEvaluation = {};
 
   // Runway items
@@ -219,12 +221,14 @@ ApronEvaluation _apronEvaluation = ApronEvaluation();
       evaluation.taxiwayEvaluation,
     );
 
-    _apronEvaluation = ApronEvaluation.fromCompatibilityMap(evaluation.apronEvaluation);
+    _apronEvaluation = ApronEvaluation.fromCompatibilityMap(
+      evaluation.apronEvaluation,
+    );
     _rffsModel = RffsEvaluation.fromCompatibilityMap(evaluation.rffsEvaluation);
     _metModel = MetEvaluation.fromCompatibilityMap(evaluation.metEvaluation);
     _navaidsEvaluation = evaluation.navaidsEvaluation;
     _operationalEvaluation = evaluation.operationalEvaluation;
-    _smsEvaluation = evaluation.smsEvaluation;
+    _smsModel = SmsEvaluation.fromCompatibilityMap(evaluation.smsEvaluation);
     _documentsEvaluation = evaluation.documentsEvaluation;
   }
 
@@ -616,17 +620,17 @@ ApronEvaluation _apronEvaluation = ApronEvaluation();
     );
   }
 
-    Step _buildApronStep() {
-      return Step(
-        title: const Text('ساحات الوقوف'),
-        content: ApronSectionWidget(
-          evaluation: _apronEvaluation,
-          onChanged: (updated) => setState(() => _apronEvaluation = updated),
-        ),
-        isActive: _currentStep >= 3,
-        state: _currentStep > 3 ? StepState.complete : StepState.indexed,
-      );
-    }
+  Step _buildApronStep() {
+    return Step(
+      title: const Text('ساحات الوقوف'),
+      content: ApronSectionWidget(
+        evaluation: _apronEvaluation,
+        onChanged: (updated) => setState(() => _apronEvaluation = updated),
+      ),
+      isActive: _currentStep >= 3,
+      state: _currentStep > 3 ? StepState.complete : StepState.indexed,
+    );
+  }
 
   Step _buildRFFSStep() {
     return Step(
@@ -676,15 +680,15 @@ ApronEvaluation _apronEvaluation = ApronEvaluation();
     );
   }
 
-  Step _buildSMSStep() {
+ Step _buildSMSStep() {
     return Step(
       title: const Text('نظام السلامة'),
-      content: _buildEvaluationSection(
-        'تقييم نظام إدارة السلامة',
-        _smsItems,
-        _smsEvaluation,
-        (key, value) => setState(() => _smsEvaluation[key] = value),
+      content: SmsSectionWidget(
+        evaluation: _smsModel,
+        onChanged: (updated) => setState(() => _smsModel = updated),
       ),
+      isActive: _currentStep >= 8,
+      state: _currentStep > 8 ? StepState.complete : StepState.indexed,
     );
   }
 
@@ -745,7 +749,7 @@ ApronEvaluation _apronEvaluation = ApronEvaluation();
       'meteorological': _metModel.toCompatibilityMap(),
       'navigationalAids': _navaidsEvaluation,
       'atc': _operationalEvaluation,
-      'security': _smsEvaluation,
+      'security': _smsModel.toCompatibilityMap(),
       'documentation': _documentsEvaluation,
     });
 
@@ -926,11 +930,11 @@ ApronEvaluation _apronEvaluation = ApronEvaluation();
       'runways': _runwayEvaluation,
       'taxiways': _taxiwayModel_2.toCompatibilityMap(),
       'aprons': _apronEvaluation.toCompatibilityMap(),
-    'rescueFire': _rffsModel.toCompatibilityMap(),
+      'rescueFire': _rffsModel.toCompatibilityMap(),
       'meteorological': _metModel.toCompatibilityMap(),
       'navigationalAids': _navaidsEvaluation,
       'atc': _operationalEvaluation,
-      'security': _smsEvaluation,
+      'security': _smsModel.toCompatibilityMap(),
       'documentation': _documentsEvaluation,
     });
 
@@ -965,7 +969,7 @@ ApronEvaluation _apronEvaluation = ApronEvaluation();
       metEvaluation: _metModel.toCompatibilityMap(),
       navaidsEvaluation: _navaidsEvaluation,
       operationalEvaluation: _operationalEvaluation,
-      smsEvaluation: _smsEvaluation,
+      smsEvaluation: _smsModel.toCompatibilityMap(),
       documentsEvaluation: _documentsEvaluation,
     );
 

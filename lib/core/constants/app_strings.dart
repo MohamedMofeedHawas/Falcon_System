@@ -133,7 +133,7 @@ class AppStrings {
   static const String evaluatedAirports = 'المطارات المقيمة';
   static const String pendingEvaluation = 'بانتظار التقييم';
   static const String airportManagers = 'مديرو المطارات';
-  static const String inspectionTeam = 'أعضاء فريق الفحص';
+  static const String inspectionTeam = 'أعضاء لجنة الفحص والتفتيش';
   static const String registeredAircraft = 'الطائرات المسجلة';
   static const String averageScore = 'متوسط التقييم الكلي';
   static const String needsCorrection = 'مطارات تحتاج تصحيح';
@@ -148,7 +148,7 @@ class AppStrings {
   static const String quickActions = 'إجراءات سريعة';
   static const String newAirport = '+ مطار جديد';
   static const String newEvaluationBtn = '+ تقييم جديد';
-  static const String newMemberBtn = '+ عضو فريق';
+  static const String newMemberBtn = '+ عضو لجنة الفحص والتفتيش';
   static const String quickReport = '📄 تقرير سريع';
   static const String analytics = '📊 تحليل بياني';
 
@@ -157,7 +157,7 @@ class AppStrings {
   static const String airports = 'المطارات';
   static const String evaluations = 'التقييمات';
   static const String managers = 'مديرو المطارات';
-  static const String team = 'فريق الفحص';
+  static const String team = 'لجنة الفحص والتفتيش';
   static const String aircraft = 'الطائرات';
   static const String reports = 'التقارير';
   static const String profile = 'الملف الشخصي';
@@ -225,7 +225,7 @@ class AppStrings {
   static const String selectAirport = 'اختر المطار';
   static const String selectRunway = 'اختر المدرج';
   static const String inspectionDate = 'تاريخ الفحص';
-  static const String teamMembers = ' أعضاء لجنة التفتيش';
+  static const String teamMembers = ' أعضاء لجنة الفحص والتفتيش';
   static const String evaluationReport = 'تقرير التقييم';
   static const String finalReport = 'التقرير النهائي';
   static const String exportPDF = 'حفظ وتصدير PDF';
@@ -469,7 +469,7 @@ class AppStrings {
   static const String howToAddAirport = 'كيفية إضافة مطار جديد';
   static const String howToEvaluate = 'كيفية إجراء تقييم';
   static const String howToExportPDF = 'تصدير تقرير PDF';
-  static const String howToManageTeam = 'إدارة فريق الفحص';
+  static const String howToManageTeam = 'إدارة لجنة الفحص والتفتيش';
   static const String howToManageAircraft = 'إدارة الطائرات';
 
   // Contact Info

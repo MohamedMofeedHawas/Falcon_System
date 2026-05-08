@@ -11,6 +11,8 @@ import 'package:falcon_system/data/sections/met_element_score.dart';
 import 'package:falcon_system/data/sections/met_evaluation.dart';
 import 'package:falcon_system/data/sections/rffs_element_score.dart';
 import 'package:falcon_system/data/sections/rffs_evaluation.dart';
+import 'package:falcon_system/data/sections/sms_element_score.dart';
+import 'package:falcon_system/data/sections/sms_evaluation.dart';
 import 'package:falcon_system/data/sections/taxiway_element_score.dart';
 import 'package:falcon_system/data/sections/taxiway_evaluation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -41,6 +43,8 @@ class HiveService {
     Hive.registerAdapter(RffsEvaluationAdapter()); 
     Hive.registerAdapter(ApronElementScoreAdapter());
     Hive.registerAdapter(ApronEvaluationAdapter());
+      Hive.registerAdapter(SmsElementScoreAdapter());  
+      Hive.registerAdapter(SmsEvaluationAdapter());    
 
     Hive.registerAdapter(AerodromeAdapter());
     Hive.registerAdapter(AirportManagerAdapter());
@@ -343,3 +347,320 @@ class HiveService {
     return result;
   }
 }
+
+/*
+import 'package:flutter/foundation.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
+import '../constants/hive_keys.dart';
+
+import 'package:falcon_system/data/models/admin_profile.dart';
+import 'package:falcon_system/data/models/aerodrome.dart';
+import 'package:falcon_system/data/models/aircraft.dart';
+import 'package:falcon_system/data/models/airport_manager.dart';
+import 'package:falcon_system/data/models/evaluation_report.dart';
+import 'package:falcon_system/data/models/inspection_head.dart';
+import 'package:falcon_system/data/models/inspection_member.dart';
+
+import 'package:falcon_system/data/sections/apron_element_score.dart';
+import 'package:falcon_system/data/sections/apron_evaluation.dart';
+
+import 'package:falcon_system/data/sections/met_element_score.dart';
+import 'package:falcon_system/data/sections/met_evaluation.dart';
+
+import 'package:falcon_system/data/sections/rffs_element_score.dart';
+import 'package:falcon_system/data/sections/rffs_evaluation.dart';
+
+import 'package:falcon_system/data/sections/taxiway_element_score.dart';
+import 'package:falcon_system/data/sections/taxiway_evaluation.dart';
+
+class HiveService {
+  HiveService._();
+
+  static bool _initialized = false;
+
+  /// ─────────────────────────────────────────────
+  /// Current Logged In Admin
+  /// ─────────────────────────────────────────────
+  static String? _currentAdminEmail;
+
+  static String? get currentAdminEmail => _currentAdminEmail;
+
+  static void setCurrentAdminEmail(String email) {
+    _currentAdminEmail = email.trim().toLowerCase();
+  }
+
+  /// ─────────────────────────────────────────────
+  /// Initialize Hive
+  /// ─────────────────────────────────────────────
+  static Future<void> init() async {
+    if (_initialized) return;
+
+    await Hive.initFlutter();
+
+    _registerAdapters();
+
+    await _openBoxes();
+
+    _initialized = true;
+
+    debugPrint('✓ Hive initialized successfully');
+  }
+
+  /// ─────────────────────────────────────────────
+  /// Register Adapters Safely
+  /// ─────────────────────────────────────────────
+  static void _registerAdapters() {
+    _registerAdapterSafely(
+      0,
+      () => Hive.registerAdapter(AdminProfileAdapter()),
+    );
+
+    _registerAdapterSafely(1, () => Hive.registerAdapter(AerodromeAdapter()));
+
+    _registerAdapterSafely(
+      2,
+      () => Hive.registerAdapter(AirportManagerAdapter()),
+    );
+
+    _registerAdapterSafely(
+      3,
+      () => Hive.registerAdapter(InspectionHeadAdapter()),
+    );
+
+    _registerAdapterSafely(
+      4,
+      () => Hive.registerAdapter(InspectionMemberAdapter()),
+    );
+
+    _registerAdapterSafely(5, () => Hive.registerAdapter(AircraftAdapter()));
+
+    _registerAdapterSafely(
+      6,
+      () => Hive.registerAdapter(EvaluationReportAdapter()),
+    );
+
+    _registerAdapterSafely(
+      7,
+      () => Hive.registerAdapter(TaxiwayElementScoreAdapter()),
+    );
+
+    _registerAdapterSafely(
+      8,
+      () => Hive.registerAdapter(TaxiwayEvaluationAdapter()),
+    );
+
+    _registerAdapterSafely(
+      9,
+      () => Hive.registerAdapter(MetElementScoreAdapter()),
+    );
+
+    _registerAdapterSafely(
+      10,
+      () => Hive.registerAdapter(MetEvaluationAdapter()),
+    );
+
+    _registerAdapterSafely(
+      11,
+      () => Hive.registerAdapter(ApronElementScoreAdapter()),
+    );
+
+    _registerAdapterSafely(
+      12,
+      () => Hive.registerAdapter(ApronEvaluationAdapter()),
+    );
+
+    _registerAdapterSafely(
+      13,
+      () => Hive.registerAdapter(RffsElementScoreAdapter()),
+    );
+
+    _registerAdapterSafely(
+      14,
+      () => Hive.registerAdapter(RffsEvaluationAdapter()),
+    );
+  }
+
+  static void _registerAdapterSafely(int typeId, VoidCallback register) {
+    if (!Hive.isAdapterRegistered(typeId)) {
+      register();
+      debugPrint('✓ Adapter $typeId registered');
+    }
+  }
+
+  /// ─────────────────────────────────────────────
+  /// Open Boxes
+  /// ─────────────────────────────────────────────
+  static Future<void> _openBoxes() async {
+    await _openBoxSafely<AdminProfile>(HiveKeys.adminProfileBox);
+
+    await _openBoxSafely<Aerodrome>(HiveKeys.aerodromesBox);
+
+    await _openBoxSafely<AirportManager>(HiveKeys.airportManagersBox);
+
+    await _openBoxSafely<InspectionHead>(HiveKeys.inspectionHeadBox);
+
+    await _openBoxSafely<InspectionMember>(HiveKeys.inspectionTeamBox);
+
+    await _openBoxSafely<Aircraft>(HiveKeys.aircraftBox);
+
+    await _openBoxSafely<EvaluationReport>(HiveKeys.evaluationReportsBox);
+  }
+
+  /// ─────────────────────────────────────────────
+  /// Open Box Safely
+  /// ─────────────────────────────────────────────
+  static Future<void> _openBoxSafely<T>(String boxName) async {
+    try {
+      if (Hive.isBoxOpen(boxName)) {
+        debugPrint('✓ Box already open: $boxName');
+        return;
+      }
+
+      await Hive.openBox<T>(boxName);
+
+      debugPrint('✓ Opened box: $boxName');
+    } catch (e) {
+      debugPrint('⚠ Error opening box $boxName');
+      debugPrint(e.toString());
+
+      try {
+        await Hive.deleteBoxFromDisk(boxName);
+
+        await Hive.openBox<T>(boxName);
+
+        debugPrint('✓ Recreated corrupted box: $boxName');
+      } catch (e) {
+        debugPrint('❌ Failed recreating box: $boxName');
+        debugPrint(e.toString());
+      }
+    }
+  }
+
+  /// ─────────────────────────────────────────────
+  /// Close Hive
+  /// ─────────────────────────────────────────────
+  static Future<void> close() async {
+    await Hive.close();
+
+    _initialized = false;
+
+    debugPrint('✓ Hive closed');
+  }
+
+  /// ─────────────────────────────────────────────
+  /// Clear All Data
+  /// ─────────────────────────────────────────────
+  static Future<void> clearAll() async {
+    final boxes = [
+      HiveKeys.adminProfileBox,
+      HiveKeys.aerodromesBox,
+      HiveKeys.airportManagersBox,
+      HiveKeys.inspectionHeadBox,
+      HiveKeys.inspectionTeamBox,
+      HiveKeys.aircraftBox,
+      HiveKeys.evaluationReportsBox,
+    ];
+
+    for (final boxName in boxes) {
+      try {
+        if (Hive.isBoxOpen(boxName)) {
+          await Hive.box(boxName).clear();
+        } else {
+          await Hive.deleteBoxFromDisk(boxName);
+        }
+
+        debugPrint('✓ Cleared box: $boxName');
+      } catch (e) {
+        debugPrint('⚠ Failed clearing box: $boxName');
+      }
+    }
+  }
+
+  /// ─────────────────────────────────────────────
+  /// Typed Boxes
+  /// ─────────────────────────────────────────────
+
+  static Box<AdminProfile> get adminBox =>
+      Hive.box<AdminProfile>(HiveKeys.adminProfileBox);
+
+  static Box<Aerodrome> get aerodromeBox =>
+      Hive.box<Aerodrome>(HiveKeys.aerodromesBox);
+
+  static Box<AirportManager> get managerBox =>
+      Hive.box<AirportManager>(HiveKeys.airportManagersBox);
+
+  static Box<InspectionHead> get inspectionHeadBox =>
+      Hive.box<InspectionHead>(HiveKeys.inspectionHeadBox);
+
+  static Box<InspectionMember> get inspectionMemberBox =>
+      Hive.box<InspectionMember>(HiveKeys.inspectionTeamBox);
+
+  static Box<Aircraft> get aircraftBox =>
+      Hive.box<Aircraft>(HiveKeys.aircraftBox);
+
+  static Box<EvaluationReport> get evaluationBox =>
+      Hive.box<EvaluationReport>(HiveKeys.evaluationReportsBox);
+
+  /// ─────────────────────────────────────────────
+  /// Admin Methods
+  /// ─────────────────────────────────────────────
+
+  static Future<void> saveAdminProfile(AdminProfile profile) async {
+    final key = profile.email.trim().toLowerCase();
+
+    await adminBox.put(key, profile);
+
+    debugPrint('✓ Admin saved: $key');
+  }
+
+  static AdminProfile? getAdminByEmail(String email) {
+    final key = email.trim().toLowerCase();
+
+    final admin = adminBox.get(key);
+
+    if (admin != null) {
+      return admin;
+    }
+
+    for (final item in adminBox.values) {
+      if (item.email.trim().toLowerCase() == key) {
+        return item;
+      }
+    }
+
+    return null;
+  }
+
+  static AdminProfile? getAdminProfile() {
+    if (_currentAdminEmail == null) {
+      if (adminBox.isEmpty) return null;
+
+      return adminBox.values.first;
+    }
+
+    return getAdminByEmail(_currentAdminEmail!);
+  }
+
+  static List<AdminProfile> getAllAdmins() {
+    return adminBox.values.toList();
+  }
+
+  /// ─────────────────────────────────────────────
+  /// Generic CRUD Helpers
+  /// ─────────────────────────────────────────────
+
+  static Future<void> putItem<T>(Box<T> box, dynamic key, T item) async {
+    await box.put(key, item);
+  }
+
+  static Future<void> deleteItem<T>(Box<T> box, dynamic key) async {
+    await box.delete(key);
+  }
+
+  static List<T> getAllItems<T>(Box<T> box) {
+    return box.values.toList();
+  }
+}
+
+*/

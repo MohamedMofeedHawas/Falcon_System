@@ -113,8 +113,8 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
                 children: [
                   SectionHeader(
                     icon: Icons.person,
-                    title: 'عضو فريق الفحص',
-                    subtitle: 'بيانات عضو فريق الفحص',
+                    title: 'عضو  لجنة الفحص والتفتيش',
+                    subtitle: 'بيانات عضو لجنة الفحص والتفتيش',
                   ),
                   const SizedBox(height: 16),
 

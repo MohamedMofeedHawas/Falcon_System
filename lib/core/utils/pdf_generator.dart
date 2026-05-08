@@ -287,7 +287,7 @@ class PdfGenerator {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            'فريق الفحص',
+            'لجنة الفحص والتفتيش',
             style: pw.TextStyle(
               font: boldFont,
               fontSize: 16,
