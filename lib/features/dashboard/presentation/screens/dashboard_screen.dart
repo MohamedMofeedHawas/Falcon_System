@@ -431,7 +431,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             subtitle: Text(
-              '${evaluation.evaluationDate.day}/${evaluation.evaluationDate.month}/${evaluation.evaluationDate.year}',
+              '${evaluation.evaluationDate}',
               style: AppFonts.labelSmall.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -571,16 +571,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     // Count evaluations per month
-    for (var evaluation in evaluations) {
+    /*for (var evaluation in evaluations) {
       final monthDiff =
           (now.year - evaluation.evaluationDate.year) * 12 +
           now.month -
-          evaluation.evaluationDate.month;
+          evaluation.evaluationDate;
       if (monthDiff >= 0 && monthDiff < 6) {
         final month = DateTime(now.year, now.month - monthDiff.toInt(), 1);
         monthlyData[month.month] = (monthlyData[month.month] ?? 0) + 1;
       }
-    }
+    }*/
 
     final months = monthlyData.keys.toList()..sort();
     final values = months.map((m) => monthlyData[m] ?? 0).toList();

@@ -90,7 +90,7 @@ class _HeadFormScreenState extends State<HeadFormScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('تم حفظ بيانات رئيس الفريق ✓'),
+          content: Text('تم حفظ بيانات رئيس لجنة التفتيش ✓'),
           backgroundColor: AppColors.success,
         ),
       );
@@ -105,7 +105,7 @@ class _HeadFormScreenState extends State<HeadFormScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          widget.head == null ? 'رئيس فريق جديد' : 'تعديل رئيس الفريق',
+          widget.head == null ? 'رئيس لجنة التفتيش جديد' : 'تعديل رئيس لجنة التفتيش',
         ),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -121,8 +121,8 @@ class _HeadFormScreenState extends State<HeadFormScreen> {
                 children: [
                   SectionHeader(
                     icon: Icons.person_pin,
-                    title: 'رئيس فريق الفحص',
-                    subtitle: 'بيانات رئيس فريق الفحص',
+                    title: 'رئيس لجنة التفتيش',
+                    subtitle: 'بيانات رئيس لجنة التفتيش',
                   ),
                   const SizedBox(height: 16),
 
@@ -171,7 +171,7 @@ class _HeadFormScreenState extends State<HeadFormScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('توقيع رئيس الفريق', style: AppFonts.labelMedium),
+                      Text('توقيع رئيس لجنة التفتيش', style: AppFonts.labelMedium),
                       const SizedBox(height: 8),
                       SignaturePad(
                         onSignatureChanged: (signature) {
@@ -224,7 +224,7 @@ class _HeadFormScreenState extends State<HeadFormScreen> {
                             )
                           : Text(
                               widget.head == null
-                                  ? 'إضافة رئيس الفريق'
+                                  ? 'إضافة رئيس لجنة التفتيش'
                                   : 'حفظ التعديلات',
                               style: AppFonts.titleMedium,
                             ),

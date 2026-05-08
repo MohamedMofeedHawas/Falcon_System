@@ -201,7 +201,7 @@ class _EvaluationListScreenState extends State<EvaluationListScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${evaluation.evaluationDate.day}/${evaluation.evaluationDate.month}/${evaluation.evaluationDate.year}',
+                          '${evaluation.evaluationDate}',
                           style: AppFonts.bodySmall.copyWith(
                             color: AppColors.textSecondary,
                           ),

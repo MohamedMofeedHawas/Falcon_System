@@ -19,7 +19,7 @@ class AppStrings {
   static const String fullName = 'الاسم بالكامل';
   static const String email = 'البريد الإلكتروني';
   static const String nationality = 'الجنسية';
-  static const String nationalId = 'الرقم القومي';
+  static const String nationalId = 'الرقم العسكري';
   static const String rank = 'الرتبة';
   static const String age = 'العمر';
   static const String flightHours = 'عدد ساعات الطيران';
@@ -192,7 +192,7 @@ class AppStrings {
   static const String runways = 'مدارج المطار';
   static const String runwayCount = 'عدد المدارج';
   static const String runwayName = 'اسم المدرج رقم';
-  static const String airportManager = 'مدير المطار';
+  static const String airportManager = 'قائد المطار';
   static const String aerodromeSaved = 'تم حفظ بيانات المطار ✓';
 
   // Airport Types
@@ -225,7 +225,7 @@ class AppStrings {
   static const String selectAirport = 'اختر المطار';
   static const String selectRunway = 'اختر المدرج';
   static const String inspectionDate = 'تاريخ الفحص';
-  static const String teamMembers = 'أعضاء الفريق الحاضرين';
+  static const String teamMembers = ' أعضاء لجنة التفتيش';
   static const String evaluationReport = 'تقرير التقييم';
   static const String finalReport = 'التقرير النهائي';
   static const String exportPDF = 'حفظ وتصدير PDF';
@@ -351,11 +351,11 @@ class AppStrings {
   static const String reinspectionDate = 'تاريخ إعادة الفحص';
 
   // Airport Manager
-  static const String manager = 'مدير المطار';
+  static const String manager = 'قائد المطار';
   static const String managersList = 'مديرو المطارات';
-  static const String newManager = 'مدير جديد';
-  static const String editManager = 'تعديل المدير';
-  static const String deleteManager = 'حذف المدير';
+  static const String newManager = 'قائد جديد';
+  static const String editManager = 'تعديل القائد';
+  static const String deleteManager = 'حذف القائد';
   static const String employeeNumber = 'الرقم الوظيفي';
   static const String appointmentDate = 'تاريخ التعيين';
   static const String signature = 'التوقيع';
@@ -367,8 +367,8 @@ class AppStrings {
   static const String managerSaved = 'تم حفظ بيانات المدير ✓';
 
   // Inspection Team
-  static const String inspectionHead = 'رئيس قسم الفحص';
-  static const String inspectionMembers = 'أعضاء فريق الفحص';
+  static const String inspectionHead = 'رئيس لجنة التفتيش';
+  static const String inspectionMembers = 'أعضاء لجنة التفتيش';
   static const String newMember = 'عضو جديد';
   static const String editMember = 'تعديل العضو';
   static const String deleteMember = 'حذف العضو';
@@ -481,7 +481,7 @@ class AppStrings {
   // Validation Messages
   static const String requiredField = 'هذا الحقل مطلوب';
   static const String invalidEmail = 'البريد الإلكتروني غير صحيح';
-  static const String invalidNationalId = 'الرقم القومي يجب أن يكون 14 رقم';
+ // static const String invalidNationalId = 'الرقم القومي يجب أن يكون 14 رقم';
   static const String invalidPhone = 'رقم الهاتف يجب أن يبدأ بـ 0 ويكون 11 رقم';
   static const String invalidAge = 'العمر يجب أن يكون بين 18 و 80';
   static const String invalidIcao =

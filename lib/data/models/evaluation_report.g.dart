@@ -28,7 +28,7 @@ class EvaluationReportAdapter extends TypeAdapter<EvaluationReport> {
       memberNames: (fields[8] as List?)?.cast<String>(),
       aircraftId: fields[9] as String?,
       aircraftName: fields[10] as String?,
-      evaluationDate: fields[11] as DateTime,
+      evaluationDate: fields[11] as DateTime?,
       totalScore: fields[12] as double,
       operationalDecision: fields[13] as String,
       managerSignature: fields[14] as Uint8List?,

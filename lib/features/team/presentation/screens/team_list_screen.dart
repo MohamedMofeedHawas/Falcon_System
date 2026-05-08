@@ -92,16 +92,16 @@ class _TeamListScreenState extends State<TeamListScreen> {
       children: [
         SectionHeader(
           icon: Icons.person_pin,
-          title: 'رئيس فريق الفحص',
+          title: 'رئيس لجنة التفتيش',
           subtitle: headList.isEmpty
-              ? 'لم يتم تعيين رئيس الفريق'
-              : 'رئيس فريق الفحص الحالي',
+              ? 'لم يتم تعيين رئيس لجنة التفتيش بعد'
+              : 'رئيس لجنة التفتيش الحالي',
         ),
         const SizedBox(height: 16),
         if (headList.isEmpty)
           EmptyCard(
             icon: Icons.person_add,
-            message: 'اضغط لإضافة رئيس فريق الفحص',
+            message: 'اضغط لإضافة رئيس لجنة التفتيش',
             onTap: () {
               Navigator.push(
                 context,
@@ -372,15 +372,15 @@ class _TeamListScreenState extends State<TeamListScreen> {
     showDialog(
       context: context,
       builder: (context) => DeleteDialog(
-        title: 'حذف رئيس الفريق',
-        message: 'هل أنت متأكد من حذف رئيس الفريق؟',
+        title: 'حذف رئيس لجنة التفتيش',
+        message: 'هل أنت متأكد من حذف رئيس لجنة التفتيش؟',
         itemName: head.fullName,
         onConfirm: () {
           context.read<TeamCubit>().deleteHead(head.id);
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('تم حذف رئيس الفريق بنجاح'),
+              content: Text('تم حذف رئيس لجنة التفتيش بنجاح'),
               backgroundColor: AppColors.success,
             ),
           );

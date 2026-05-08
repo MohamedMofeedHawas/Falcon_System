@@ -456,13 +456,13 @@ class _AdminSetupScreenState extends State<AdminSetupScreen> {
                 const SizedBox(height: 12),
                 // ✅ No counter shown (maxLength removed — validated in validator)
                 CustomTextField(
-                  counterText: "",
-                  maxLength: 14,
+                 // counterText: "",
+                //  maxLength: 14,
                   label: AppStrings.nationalId,
                   controller: _nationalIdCtrl,
                   keyboardType: TextInputType.number,
                   prefixIcon: const Icon(Icons.badge_outlined),
-                  validator: Validators.validateNationalId,
+                 // validator: Validators.validateNationalId,
                 ),
                 const SizedBox(height: 12),
                 CustomDropdown(

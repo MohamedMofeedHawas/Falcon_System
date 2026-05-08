@@ -42,7 +42,7 @@ class EvaluationReport extends HiveObject {
   String? aircraftName;
 
   @HiveField(11)
-  DateTime evaluationDate;
+  DateTime? evaluationDate; // ← غيرناها nullable
 
   @HiveField(12)
   double totalScore;
@@ -63,12 +63,11 @@ class EvaluationReport extends HiveObject {
   String? notes;
 
   @HiveField(18)
-  DateTime createdAt;
+  DateTime? createdAt; // ← غيرناها nullable
 
   @HiveField(19)
-  DateTime updatedAt;
+  DateTime? updatedAt; // ← غيرناها nullable
 
-  // Section evaluations (stored as maps for simplicity)
   @HiveField(20)
   Map<String, dynamic> runwayEvaluation;
 
@@ -96,6 +95,11 @@ class EvaluationReport extends HiveObject {
   @HiveField(28)
   Map<String, dynamic> documentsEvaluation;
 
+  // ← Safe getters بيحمي من null على Web
+  DateTime get safeEvaluationDate => evaluationDate ?? DateTime.now();
+  DateTime get safeCreatedAt => createdAt ?? DateTime.now();
+  DateTime get safeUpdatedAt => updatedAt ?? DateTime.now();
+
   EvaluationReport({
     required this.id,
     required this.aerodromeId,
@@ -108,7 +112,7 @@ class EvaluationReport extends HiveObject {
     List<String>? memberNames,
     this.aircraftId,
     this.aircraftName,
-    required this.evaluationDate,
+    DateTime? evaluationDate,
     required this.totalScore,
     required this.operationalDecision,
     this.managerSignature,
@@ -126,7 +130,8 @@ class EvaluationReport extends HiveObject {
     Map<String, dynamic>? operationalEvaluation,
     Map<String, dynamic>? smsEvaluation,
     Map<String, dynamic>? documentsEvaluation,
-  }) : memberIds = memberIds ?? [],
+  }) : evaluationDate = evaluationDate ?? DateTime.now(),
+       memberIds = memberIds ?? [],
        memberNames = memberNames ?? [],
        createdAt = createdAt ?? DateTime.now(),
        updatedAt = updatedAt ?? DateTime.now(),
@@ -183,15 +188,15 @@ class EvaluationReport extends HiveObject {
       memberNames: memberNames ?? this.memberNames,
       aircraftId: aircraftId ?? this.aircraftId,
       aircraftName: aircraftName ?? this.aircraftName,
-      evaluationDate: evaluationDate ?? this.evaluationDate,
+      evaluationDate: evaluationDate ?? safeEvaluationDate,
       totalScore: totalScore ?? this.totalScore,
       operationalDecision: operationalDecision ?? this.operationalDecision,
       managerSignature: managerSignature ?? this.managerSignature,
       headSignature: headSignature ?? this.headSignature,
       reinspectionDate: reinspectionDate ?? this.reinspectionDate,
       notes: notes ?? this.notes,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      createdAt: createdAt ?? safeCreatedAt,
+      updatedAt: updatedAt ?? safeUpdatedAt,
       runwayEvaluation: runwayEvaluation ?? this.runwayEvaluation,
       taxiwayEvaluation: taxiwayEvaluation ?? this.taxiwayEvaluation,
       apronEvaluation: apronEvaluation ?? this.apronEvaluation,
@@ -218,15 +223,15 @@ class EvaluationReport extends HiveObject {
       'memberNames': memberNames,
       'aircraftId': aircraftId,
       'aircraftName': aircraftName,
-      'evaluationDate': evaluationDate.toIso8601String(),
+      'evaluationDate': safeEvaluationDate.toIso8601String(),
       'totalScore': totalScore,
       'operationalDecision': operationalDecision,
       'managerSignature': managerSignature,
       'headSignature': headSignature,
       'reinspectionDate': reinspectionDate?.toIso8601String(),
       'notes': notes,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'createdAt': safeCreatedAt.toIso8601String(),
+      'updatedAt': safeUpdatedAt.toIso8601String(),
       'runwayEvaluation': runwayEvaluation,
       'taxiwayEvaluation': taxiwayEvaluation,
       'apronEvaluation': apronEvaluation,
@@ -240,48 +245,56 @@ class EvaluationReport extends HiveObject {
   }
 
   factory EvaluationReport.fromJson(Map<String, dynamic> json) {
+    DateTime? parseDate(dynamic value) {
+      if (value == null) return null;
+      try {
+        return DateTime.parse(value as String);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    Map<String, dynamic> safeMap(dynamic value) {
+      if (value == null) return {};
+      if (value is Map<String, dynamic>) return value;
+      try {
+        return Map<String, dynamic>.from(value as Map);
+      } catch (_) {
+        return {};
+      }
+    }
+
     return EvaluationReport(
-      id: json['id'] as String,
-      aerodromeId: json['aerodromeId'] as String,
-      aerodromeName: json['aerodromeName'] as String,
-      managerId: json['managerId'] as String,
-      managerName: json['managerName'] as String,
-      headId: json['headId'] as String,
-      headName: json['headName'] as String,
+      id: json['id'] as String? ?? '',
+      aerodromeId: json['aerodromeId'] as String? ?? '',
+      aerodromeName: json['aerodromeName'] as String? ?? '',
+      managerId: json['managerId'] as String? ?? '',
+      managerName: json['managerName'] as String? ?? '',
+      headId: json['headId'] as String? ?? '',
+      headName: json['headName'] as String? ?? '',
       memberIds: (json['memberIds'] as List<dynamic>?)?.cast<String>() ?? [],
       memberNames:
           (json['memberNames'] as List<dynamic>?)?.cast<String>() ?? [],
       aircraftId: json['aircraftId'] as String?,
       aircraftName: json['aircraftName'] as String?,
-      evaluationDate: DateTime.parse(json['evaluationDate'] as String),
-      totalScore: json['totalScore'] as double,
-      operationalDecision: json['operationalDecision'] as String,
+      evaluationDate: parseDate(json['evaluationDate']) ?? DateTime.now(),
+      totalScore: (json['totalScore'] as num?)?.toDouble() ?? 0.0,
+      operationalDecision: json['operationalDecision'] as String? ?? '',
       managerSignature: json['managerSignature'] as Uint8List?,
       headSignature: json['headSignature'] as Uint8List?,
-      reinspectionDate: json['reinspectionDate'] != null
-          ? DateTime.parse(json['reinspectionDate'] as String)
-          : null,
+      reinspectionDate: parseDate(json['reinspectionDate']),
       notes: json['notes'] as String?,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : DateTime.now(),
-      runwayEvaluation:
-          (json['runwayEvaluation'] as Map<String, dynamic>?) ?? {},
-      taxiwayEvaluation:
-          (json['taxiwayEvaluation'] as Map<String, dynamic>?) ?? {},
-      apronEvaluation: (json['apronEvaluation'] as Map<String, dynamic>?) ?? {},
-      rffsEvaluation: (json['rffsEvaluation'] as Map<String, dynamic>?) ?? {},
-      metEvaluation: (json['metEvaluation'] as Map<String, dynamic>?) ?? {},
-      navaidsEvaluation:
-          (json['navaidsEvaluation'] as Map<String, dynamic>?) ?? {},
-      operationalEvaluation:
-          (json['operationalEvaluation'] as Map<String, dynamic>?) ?? {},
-      smsEvaluation: (json['smsEvaluation'] as Map<String, dynamic>?) ?? {},
-      documentsEvaluation:
-          (json['documentsEvaluation'] as Map<String, dynamic>?) ?? {},
+      createdAt: parseDate(json['createdAt']) ?? DateTime.now(),
+      updatedAt: parseDate(json['updatedAt']) ?? DateTime.now(),
+      runwayEvaluation: safeMap(json['runwayEvaluation']),
+      taxiwayEvaluation: safeMap(json['taxiwayEvaluation']),
+      apronEvaluation: safeMap(json['apronEvaluation']),
+      rffsEvaluation: safeMap(json['rffsEvaluation']),
+      metEvaluation: safeMap(json['metEvaluation']),
+      navaidsEvaluation: safeMap(json['navaidsEvaluation']),
+      operationalEvaluation: safeMap(json['operationalEvaluation']),
+      smsEvaluation: safeMap(json['smsEvaluation']),
+      documentsEvaluation: safeMap(json['documentsEvaluation']),
     );
   }
 }

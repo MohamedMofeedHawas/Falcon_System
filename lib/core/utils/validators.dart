@@ -150,8 +150,11 @@ class Validators {
   }
 
   // Parse Birth Date from National ID (Egyptian format)
-  static DateTime? parseBirthDateFromNationalId(String nationalId) {
-    if (nationalId.length != 14) return null;
+ /* static DateTime? parseBirthDateFromNationalId(
+    String nationalId
+    
+    ) {
+   // if (nationalId.length != 14) return null;
 
     try {
       final century = int.parse(nationalId.substring(0, 1));
@@ -166,7 +169,7 @@ class Validators {
     } catch (e) {
       return null;
     }
-  }
+  }*/
 
   // Calculate License Validity
   static Map<String, dynamic> calculateLicenseValidity(

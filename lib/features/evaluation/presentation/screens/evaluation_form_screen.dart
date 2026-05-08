@@ -1,7 +1,11 @@
 import 'dart:typed_data';
 
+import 'package:falcon_system/data/sections/apron_evaluation.dart';
+import 'package:falcon_system/data/sections/apron_section_widget.dart';
 import 'package:falcon_system/data/sections/met_evaluation.dart';
 import 'package:falcon_system/data/sections/met_section_widget.dart';
+import 'package:falcon_system/data/sections/rffs_evaluation.dart';
+import 'package:falcon_system/data/sections/rffs_section_widget.dart';
 import 'package:falcon_system/data/sections/taxiway_evaluation.dart';
 import 'package:falcon_system/data/sections/taxiway_section.dart';
 import 'package:flutter/material.dart';
@@ -55,7 +59,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
   String? _selectedAircraftId;
   String? _selectedAircraftName;
   String? _pendingMemberId;
-  DateTime _evaluationDate = DateTime.now();
+  DateTime _evaluationDateTime = DateTime.now(); // ← دايمًا عنده قيمة
   String? _notes;
 
   List<Aerodrome> _aerodromes = [];
@@ -71,9 +75,9 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
   // Section Evaluations
   Map<String, dynamic> _runwayEvaluation = {};
   TaxiwayEvaluation _taxiwayModel_2 = TaxiwayEvaluation();
-  Map<String, dynamic> _apronEvaluation = {};
-  Map<String, dynamic> _rffsEvaluation = {};
-      MetEvaluation _metModel = MetEvaluation();
+ApronEvaluation _apronEvaluation = ApronEvaluation();
+  RffsEvaluation _rffsModel = RffsEvaluation();
+  MetEvaluation _metModel = MetEvaluation();
   Map<String, dynamic> _navaidsEvaluation = {};
   Map<String, dynamic> _operationalEvaluation = {};
   Map<String, dynamic> _smsEvaluation = {};
@@ -202,24 +206,136 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
     _selectedMemberNames = evaluation.memberNames;
     _selectedAircraftId = evaluation.aircraftId;
     _selectedAircraftName = evaluation.aircraftName;
-    _evaluationDate = evaluation.evaluationDate;
+
+    // ← استخدم safeEvaluationDate بدل evaluationDate مباشرة
+    _evaluationDateTime = evaluation.safeEvaluationDate;
+
     _notes = evaluation.notes;
     _managerSignature = evaluation.managerSignature;
     _headSignature = evaluation.headSignature;
     _runwayEvaluation = evaluation.runwayEvaluation;
 
-    // Handle taxiwayEvaluation - it could be a Map or a TaxiwayEvaluation object
     _taxiwayModel_2 = TaxiwayEvaluation.fromCompatibilityMap(
       evaluation.taxiwayEvaluation,
     );
 
-    _apronEvaluation = evaluation.apronEvaluation;
-    _rffsEvaluation = evaluation.rffsEvaluation;
+    _apronEvaluation = ApronEvaluation.fromCompatibilityMap(evaluation.apronEvaluation);
+    _rffsModel = RffsEvaluation.fromCompatibilityMap(evaluation.rffsEvaluation);
     _metModel = MetEvaluation.fromCompatibilityMap(evaluation.metEvaluation);
     _navaidsEvaluation = evaluation.navaidsEvaluation;
     _operationalEvaluation = evaluation.operationalEvaluation;
     _smsEvaluation = evaluation.smsEvaluation;
     _documentsEvaluation = evaluation.documentsEvaluation;
+  }
+
+  // ← دالة التاريخ والوقت المحسّنة
+  Future<void> _selectDateTime() async {
+    // الخطوة 1: اختيار التاريخ
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _evaluationDateTime,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      locale: const Locale('ar'),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              surface: AppColors.card,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate == null || !mounted) return;
+
+    // الخطوة 2: اختيار الوقت
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_evaluationDateTime),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              surface: AppColors.card,
+            ),
+          ),
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: child!,
+          ),
+        );
+      },
+    );
+
+    if (pickedTime == null || !mounted) return;
+
+    // الخطوة 3: الثواني تلقائية من الوقت الحالي
+    final int autoSeconds = DateTime.now().second;
+
+    setState(() {
+      _evaluationDateTime = DateTime(
+        pickedDate.year,
+        pickedDate.month,
+        pickedDate.day,
+        pickedTime.hour,
+        pickedTime.minute,
+        autoSeconds,
+      );
+    });
+  }
+
+  // ← دالة التنسيق الاحترافي — محمية من null
+  String _formatDateTimeArabic(DateTime? dt) {
+    // لو جه null لأي سبب، استخدم الوقت الحالي
+    final safeDate = dt ?? DateTime.now();
+
+    const List<String> arabicMonths = [
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'مايو',
+      'يونيو',
+      'يوليو',
+      'أغسطس',
+      'سبتمبر',
+      'أكتوبر',
+      'نوفمبر',
+      'ديسمبر',
+    ];
+
+    const List<String> arabicDays = [
+      'الاثنين',
+      'الثلاثاء',
+      'الأربعاء',
+      'الخميس',
+      'الجمعة',
+      'السبت',
+      'الأحد',
+    ];
+
+    final String dayName = arabicDays[safeDate.weekday - 1];
+    final String monthName = arabicMonths[safeDate.month - 1];
+    final String day = safeDate.day.toString().padLeft(2, '0');
+    final String year = safeDate.year.toString();
+    final String minute = safeDate.minute.toString().padLeft(2, '0');
+    final String second = safeDate.second.toString().padLeft(2, '0');
+    final String period = safeDate.hour >= 12 ? 'م' : 'ص';
+    final int hour12 = safeDate.hour > 12
+        ? safeDate.hour - 12
+        : safeDate.hour == 0
+        ? 12
+        : safeDate.hour;
+    final String hour12Str = hour12.toString().padLeft(2, '0');
+
+    return '$dayName، $day $monthName $year\n$hour12Str:$minute:$second $period';
   }
 
   @override
@@ -280,9 +396,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
           BlocListener<ManagerCubit, ManagerState>(
             listener: (context, state) {
               if (state is ManagerLoaded) {
-                setState(() {
-                  _managers = state.managers;
-                });
+                setState(() => _managers = state.managers);
               }
             },
           ),
@@ -299,9 +413,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
           BlocListener<AircraftCubit, AircraftState>(
             listener: (context, state) {
               if (state is AircraftLoaded) {
-                setState(() {
-                  _aircraft = state.aircraft;
-                });
+                setState(() => _aircraft = state.aircraft);
               }
             },
           ),
@@ -330,13 +442,12 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                   _selectedAerodromeName = selected.arabicName;
                 });
               },
-              validator: (value) =>
-                  value == null ? 'Please select an aerodrome' : null,
+              validator: (value) => value == null ? 'يرجى اختيار المطار' : null,
             ),
             const SizedBox(height: 16),
             CustomDropdown<String>(
-              label: 'مدير المطار',
-              hint: 'اختر مدير المطار',
+              label: 'قائد المطار',
+              hint: 'اختر قائد المطار',
               items: _managers
                   .map(
                     (m) => DropdownMenuItem<String>(
@@ -355,12 +466,12 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                 });
               },
               validator: (value) =>
-                  value == null ? '���� ������ ���� ������' : null,
+                  value == null ? 'يرجى اختيار قائد المطار' : null,
             ),
             const SizedBox(height: 16),
             CustomDropdown<String>(
-              label: 'رئيس الفريق',
-              hint: 'اختر رئيس الفريق',
+              label: 'رئيس لجنة التفتيش ',
+              hint: 'اختر رئيس لجنة التفتيش',
               items: _heads
                   .map(
                     (h) => DropdownMenuItem<String>(
@@ -379,12 +490,12 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                 });
               },
               validator: (value) =>
-                  value == null ? 'Please select a team head' : null,
+                  value == null ? 'يرجى اختيار رئيس لجنة التفتيش' : null,
             ),
             const SizedBox(height: 16),
             CustomDropdown<String>(
-              label: 'عضو الفريق',
-              hint: 'اختر عضو الفريق',
+              label: 'عضو لجنة التفتيش',
+              hint: 'اختر عضو لجنة التفتيش',
               items: _members
                   .where((m) => !_selectedMemberIds.contains(m.id))
                   .map(
@@ -435,54 +546,38 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            CustomDropdown<String>(
-              label: 'الطائرات',
-              hint: 'اختر الطائرة',
-              items: _aircraft
-                  .map(
-                    (a) => DropdownMenuItem<String>(
-                      value: a.id,
-                      child: Text(' - '),
-                    ),
-                  )
-                  .toList(),
-              value: _selectedAircraftId,
-              onChanged: (value) {
-                if (value == null) {
-                  setState(() {
-                    _selectedAircraftId = null;
-                    _selectedAircraftName = null;
-                  });
-                  return;
-                }
-                final selected = _aircraft.firstWhere((a) => a.id == value);
-                setState(() {
-                  _selectedAircraftId = selected.id;
-                  _selectedAircraftName = ' - ';
-                });
-              },
-            ),
-            const SizedBox(height: 16),
+
+            // ← Widget التاريخ والوقت المحسّن
             InkWell(
-              onTap: () => _selectDate(),
+              onTap: _selectDateTime,
+              borderRadius: BorderRadius.circular(12),
               child: InputDecorator(
                 decoration: InputDecoration(
-                  labelText: 'تاريخ التقييم',
+                  labelText: 'تاريخ  التقييم',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
                   fillColor: AppColors.card,
-                  suffixIcon: const Icon(Icons.calendar_today),
+                  suffixIcon: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.calendar_today, size: 18),
+                      SizedBox(height: 2),
+                      Icon(Icons.access_time, size: 18),
+                    ],
+                  ),
                 ),
                 child: Text(
-                  app_date_utils.DateUtils.formatToArabic(_evaluationDate),
+                  _formatDateTimeArabic(_evaluationDateTime),
                   style: AppFonts.bodyMedium.copyWith(
                     color: AppColors.textPrimary,
+                    height: 1.6,
                   ),
                 ),
               ),
             ),
+
             const SizedBox(height: 16),
             CustomTextField(
               label: 'ملاحظات',
@@ -521,31 +616,31 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
     );
   }
 
-  Step _buildApronStep() {
-    return Step(
-      title: const Text('الساحات'),
-      content: _buildEvaluationSection(
-        'تقييم الساحات',
-        _apronItems,
-        _apronEvaluation,
-        (key, value) => setState(() => _apronEvaluation[key] = value),
-      ),
-    );
-  }
+    Step _buildApronStep() {
+      return Step(
+        title: const Text('ساحات الوقوف'),
+        content: ApronSectionWidget(
+          evaluation: _apronEvaluation,
+          onChanged: (updated) => setState(() => _apronEvaluation = updated),
+        ),
+        isActive: _currentStep >= 3,
+        state: _currentStep > 3 ? StepState.complete : StepState.indexed,
+      );
+    }
 
   Step _buildRFFSStep() {
     return Step(
-      title: const Text('الإنقاذ والإطفاء'),
-      content: _buildEvaluationSection(
-        'تقييم خدمات الإنقاذ والإطفاء',
-        _rffsItems,
-        _rffsEvaluation,
-        (key, value) => setState(() => _rffsEvaluation[key] = value),
+      title: const Text('الإطفاء والإنقاذ'),
+      content: RffsSectionWidget(
+        evaluation: _rffsModel,
+        onChanged: (updated) => setState(() => _rffsModel = updated),
       ),
+      isActive: _currentStep >= 4,
+      state: _currentStep > 4 ? StepState.complete : StepState.indexed,
     );
   }
 
-Step _buildMETStep() {
+  Step _buildMETStep() {
     return Step(
       title: const Text('الأرصاد الجوية'),
       content: MetSectionWidget(
@@ -614,7 +709,7 @@ Step _buildMETStep() {
           const SizedBox(height: 16),
           const SectionHeader(
             icon: Icons.person,
-            title: 'توقيع مدير المطار',
+            title: 'توقيع قائد المطار',
             subtitle: 'يرجى التوقيع أدناه',
           ),
           const SizedBox(height: 16),
@@ -626,7 +721,7 @@ Step _buildMETStep() {
           const SizedBox(height: 32),
           const SectionHeader(
             icon: Icons.badge,
-            title: 'توقيع رئيس فريق الفحص',
+            title: 'توقيع رئيس لجنة التفتيش',
             subtitle: 'يرجى التوقيع أدناه',
           ),
           const SizedBox(height: 16),
@@ -645,8 +740,8 @@ Step _buildMETStep() {
     final totalScore = cubit.calculateTotalScore({
       'runways': _runwayEvaluation,
       'taxiways': _taxiwayModel_2.toCompatibilityMap(),
-      'aprons': _apronEvaluation,
-      'rescueFire': _rffsEvaluation,
+      'aprons': _apronEvaluation.toCompatibilityMap(),
+      'rescueFire': _rffsModel.toCompatibilityMap(),
       'meteorological': _metModel.toCompatibilityMap(),
       'navigationalAids': _navaidsEvaluation,
       'atc': _operationalEvaluation,
@@ -734,19 +829,22 @@ Step _buildMETStep() {
             ),
           ),
           const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _submitEvaluation,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.textWhite,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _submitEvaluation,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.textWhite,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-            ),
-            child: const Text(
-              'حفظ التقرير',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              child: const Text(
+                'حفظ التقرير',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ],
@@ -799,9 +897,7 @@ Step _buildMETStep() {
 
   void _nextStep() {
     if (_currentStep == 0) {
-      if (_selectedAerodromeName != null ||
-          _selectedManagerName == null ||
-          _selectedHeadName == null) {
+      if (_selectedManagerName != null || _selectedHeadName != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('يرجى ملء جميع الحقول المطلوبة')),
         );
@@ -813,18 +909,6 @@ Step _buildMETStep() {
 
   void _previousStep() {
     setState(() => _currentStep--);
-  }
-
-  Future<void> _selectDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _evaluationDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null) {
-      setState(() => _evaluationDate = picked);
-    }
   }
 
   void _submitEvaluation() {
@@ -841,8 +925,8 @@ Step _buildMETStep() {
     final totalScore = cubit.calculateTotalScore({
       'runways': _runwayEvaluation,
       'taxiways': _taxiwayModel_2.toCompatibilityMap(),
-      'aprons': _apronEvaluation,
-      'rescueFire': _rffsEvaluation,
+      'aprons': _apronEvaluation.toCompatibilityMap(),
+    'rescueFire': _rffsModel.toCompatibilityMap(),
       'meteorological': _metModel.toCompatibilityMap(),
       'navigationalAids': _navaidsEvaluation,
       'atc': _operationalEvaluation,
@@ -865,20 +949,20 @@ Step _buildMETStep() {
       memberNames: _selectedMemberNames,
       aircraftId: _selectedAircraftId,
       aircraftName: _selectedAircraftName,
-      evaluationDate: _evaluationDate,
+      evaluationDate: _evaluationDateTime, // ← دايمًا عندها قيمة
       totalScore: totalScore,
       operationalDecision: operationalDecision,
       managerSignature: _managerSignature,
       headSignature: _headSignature,
       reinspectionDate: reinspectionDate,
       notes: _notes,
-      createdAt: widget.evaluation?.createdAt,
+      createdAt: widget.evaluation?.safeCreatedAt, // ← استخدم safe getter
       updatedAt: DateTime.now(),
       runwayEvaluation: _runwayEvaluation,
       taxiwayEvaluation: _taxiwayModel_2.toCompatibilityMap(),
-      apronEvaluation: _apronEvaluation,
-      rffsEvaluation: _rffsEvaluation,
-    metEvaluation: _metModel.toCompatibilityMap(),
+      apronEvaluation: _apronEvaluation.toCompatibilityMap(),
+      rffsEvaluation: _rffsModel.toCompatibilityMap(),
+      metEvaluation: _metModel.toCompatibilityMap(),
       navaidsEvaluation: _navaidsEvaluation,
       operationalEvaluation: _operationalEvaluation,
       smsEvaluation: _smsEvaluation,
@@ -888,6 +972,7 @@ Step _buildMETStep() {
     cubit.saveEvaluation(evaluation);
 
     Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
       setState(() => _isLoading = false);
       Navigator.pop(context);
     });

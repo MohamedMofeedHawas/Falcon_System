@@ -5,8 +5,12 @@ import 'package:falcon_system/data/models/airport_manager.dart';
 import 'package:falcon_system/data/models/evaluation_report.dart';
 import 'package:falcon_system/data/models/inspection_head.dart';
 import 'package:falcon_system/data/models/inspection_member.dart';
+import 'package:falcon_system/data/sections/apron_element_score.dart';
+import 'package:falcon_system/data/sections/apron_evaluation.dart';
 import 'package:falcon_system/data/sections/met_element_score.dart';
 import 'package:falcon_system/data/sections/met_evaluation.dart';
+import 'package:falcon_system/data/sections/rffs_element_score.dart';
+import 'package:falcon_system/data/sections/rffs_evaluation.dart';
 import 'package:falcon_system/data/sections/taxiway_element_score.dart';
 import 'package:falcon_system/data/sections/taxiway_evaluation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -33,6 +37,11 @@ class HiveService {
 
   static void _registerAdapters() {
     Hive.registerAdapter(AdminProfileAdapter());
+    Hive.registerAdapter(RffsElementScoreAdapter()); 
+    Hive.registerAdapter(RffsEvaluationAdapter()); 
+    Hive.registerAdapter(ApronElementScoreAdapter());
+    Hive.registerAdapter(ApronEvaluationAdapter());
+
     Hive.registerAdapter(AerodromeAdapter());
     Hive.registerAdapter(AirportManagerAdapter());
     Hive.registerAdapter(InspectionHeadAdapter());

@@ -149,7 +149,7 @@ class _ManagerFormScreenState extends State<ManagerFormScreen> {
                   SectionHeader(
                     icon: Icons.person,
                     title: AppStrings.manager,
-                    subtitle: 'بيانات مدير المطار',
+                    subtitle: 'بيانات قائد المطار',
                   ),
                   const SizedBox(height: 16),
 

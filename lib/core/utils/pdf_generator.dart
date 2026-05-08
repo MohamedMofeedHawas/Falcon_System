@@ -243,7 +243,7 @@ class PdfGenerator {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            'مدير المطار',
+            'قائد المطار',
             style: pw.TextStyle(
               font: boldFont,
               fontSize: 16,
@@ -516,7 +516,7 @@ class PdfGenerator {
                 child: pw.Column(
                   children: [
                     pw.Text(
-                      'توقيع مدير المطار',
+                      'توقيع قائد المطار',
                       style: pw.TextStyle(font: font, fontSize: 12),
                     ),
                     pw.SizedBox(height: 40),
@@ -534,7 +534,7 @@ class PdfGenerator {
                 child: pw.Column(
                   children: [
                     pw.Text(
-                      'توقيع رئيس فريق الفحص',
+                      'توقيع رئيس لجنة التفتيش',
                       style: pw.TextStyle(font: font, fontSize: 12),
                     ),
                     pw.SizedBox(height: 40),
