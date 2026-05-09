@@ -1,4 +1,7 @@
+import 'dart:developer' as developer;
+
 import 'package:hive/hive.dart';
+
 import 'taxiway_element_score.dart';
 
 part 'taxiway_evaluation.g.dart';
@@ -63,6 +66,7 @@ class TaxiwayEvaluation extends HiveObject {
                'edge_lines': false,
                'intersection_marks': false,
                'holding_marks': false,
+               'markings_visibility': false,
              },
            ),
        lighting =
@@ -184,67 +188,124 @@ class TaxiwayEvaluation extends HiveObject {
 
   /// إنشاء من Map<String, dynamic> (للتوافق مع البيانات القديمة)
   factory TaxiwayEvaluation.fromCompatibilityMap(Map<String, dynamic> map) {
-    TaxiwayElementScore _parse(String key, Map<String, bool> defaultSub) {
+    bool coerceBool(dynamic v) {
+      if (v is bool) return v;
+      if (v is num) return v != 0;
+      if (v is String) {
+        final s = v.toLowerCase();
+        return s == 'true' || s == '1' || s == 'yes';
+      }
+      return false;
+    }
+
+    Map<String, dynamic>? elementMap(dynamic raw) {
+      if (raw == null) return null;
+      if (raw is Map<String, dynamic>) return raw;
+      if (raw is Map) {
+        try {
+          return raw.map((k, v) => MapEntry(k.toString(), v));
+        } catch (_) {
+          return null;
+        }
+      }
+      return null;
+    }
+
+    Map<String, bool> mergeSubCriteria(
+      Map<String, bool> defaults,
+      dynamic subRaw,
+    ) {
+      Map<String, dynamic> subMap = {};
+      if (subRaw is Map) {
+        try {
+          subMap = subRaw.map((k, v) => MapEntry(k.toString(), v));
+        } catch (_) {
+          subMap = {};
+        }
+      }
+      return {
+        for (final e in defaults.entries)
+          e.key: coerceBool(subMap[e.key]) ? true : false,
+      };
+    }
+
+    TaxiwayElementScore parseElement(String key, Map<String, bool> defaultSub) {
       final raw = map[key];
-      if (raw == null) {
+      final m = elementMap(raw);
+      if (m == null) {
         return TaxiwayElementScore(key: key, subCriteriaChecked: defaultSub);
       }
-      final m = raw as Map<String, dynamic>;
-      final subRaw = m['subCriteria'] as Map? ?? {};
+      final scoreRaw = m['score'];
+      int score = 5;
+      if (scoreRaw is num) {
+        score = scoreRaw.round().clamp(0, 10);
+      } else if (scoreRaw is String) {
+        score = int.tryParse(scoreRaw.trim())?.clamp(0, 10) ?? 5;
+      }
+      final noteVal = m['note'] ?? m['notes'];
+      final notes = noteVal is String ? noteVal : (noteVal?.toString() ?? '');
       return TaxiwayElementScore(
         key: key,
-        score: ((m['score'] as num?) ?? 5).toInt(),
-        notes: (m['note'] as String?) ?? '',
-        subCriteriaChecked: Map<String, bool>.from(
-          defaultSub.map((k, v) => MapEntry(k, (subRaw[k] as bool?) ?? false)),
-        ),
+        score: score,
+        notes: notes,
+        subCriteriaChecked: mergeSubCriteria(defaultSub, m['subCriteria']),
       );
     }
 
-    return TaxiwayEvaluation(
-      widthClearances: _parse('width_clearances', {
-        'nominal_width': false,
-        'parallel_spacing': false,
-        'paved_shoulders': false,
-        'aircraft_clearance': false,
-      }),
-      groundMarkings: _parse('ground_markings', {
-        'centerline': false,
-        'edge_lines': false,
-        'intersection_marks': false,
-        'holding_marks': false,
-      }),
-      lighting: _parse('lighting', {
-        'centerline_lights': false,
-        'edge_lights': false,
-        'sign_illumination': false,
-        'intersection_guidance': false,
-        'stop_bars': false,
-      }),
-      surfaceCondition: _parse('surface_condition', {
-        'no_cracks': false,
-        'no_fluid_pools': false,
-        'level_surface': false,
-        'friction_coeff': false,
-        'no_fod': false,
-      }),
-      directionalSigns: _parse('directional_signs', {
-        'mandatory_signs': false,
-        'info_signs': false,
-        'legibility': false,
-        'night_illumination': false,
-      }),
-      lateralStrip: _parse('lateral_strip', {
-        'obstacle_free': false,
-        'wingtip_clearance': false,
-        'rescue_shoulders': false,
-      }),
-      drainage: _parse('drainage', {
-        'surface_gradient': false,
-        'unblocked_drains': false,
-        'no_centerline_pools': false,
-      }),
-    );
+    try {
+      return TaxiwayEvaluation(
+        widthClearances: parseElement('width_clearances', {
+          'nominal_width': false,
+          'parallel_spacing': false,
+          'paved_shoulders': false,
+          'aircraft_clearance': false,
+        }),
+        groundMarkings: parseElement('ground_markings', {
+          'centerline': false,
+          'edge_lines': false,
+          'intersection_marks': false,
+          'holding_marks': false,
+          'markings_visibility': false,
+        }),
+        lighting: parseElement('lighting', {
+          'centerline_lights': false,
+          'edge_lights': false,
+          'sign_illumination': false,
+          'intersection_guidance': false,
+          'stop_bars': false,
+        }),
+        surfaceCondition: parseElement('surface_condition', {
+          'no_cracks': false,
+          'no_fluid_pools': false,
+          'level_surface': false,
+          'friction_coeff': false,
+          'no_fod': false,
+        }),
+        directionalSigns: parseElement('directional_signs', {
+          'mandatory_signs': false,
+          'info_signs': false,
+          'legibility': false,
+          'night_illumination': false,
+        }),
+        lateralStrip: parseElement('lateral_strip', {
+          'obstacle_free': false,
+          'wingtip_clearance': false,
+          'rescue_shoulders': false,
+        }),
+        drainage: parseElement('drainage', {
+          'surface_gradient': false,
+          'unblocked_drains': false,
+          'no_centerline_pools': false,
+        }),
+      );
+    } catch (e, st) {
+      developer.log(
+        'TaxiwayEvaluation.fromCompatibilityMap failed',
+        error: e,
+        stackTrace: st,
+      );
+      return TaxiwayEvaluation();
+    }
   }
 }
 
@@ -327,7 +388,7 @@ const List<TaxiwayElementMeta> kTaxiwayElementsMeta = [
         labelAr: 'علامات موقع التوقف (Holding Positions) عند المدرج مرئية',
       ),
       SubCriteriaMeta(
-        key: 'holding_marks',
+        key: 'markings_visibility',
         labelAr: 'كل العلامات واضحة وغير متلاشيه',
       ),
     ],

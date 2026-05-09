@@ -23,8 +23,8 @@ void main() async {
     DeviceOrientation.landscapeRight,
   ]);
 
-  // Initialize Hive
-await HiveService.init();
+  // Initialize Hive (all boxes must be open before any screen uses them)
+  await HiveService.init();
 
   runApp(const FalconAISApp());
 }

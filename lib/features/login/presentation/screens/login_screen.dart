@@ -31,6 +31,8 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
+      await HiveService.init();
+
       final email = _emailCtrl.text.trim().toLowerCase();
       final password = _passwordCtrl.text;
 

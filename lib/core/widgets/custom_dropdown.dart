@@ -36,7 +36,9 @@ class CustomDropdown<T> extends StatelessWidget {
       items: items,
       onChanged: enabled ? onChanged : null,
       validator: validator,
-      style: AppFonts.bodyMedium,
+      style: AppFonts.bodyMedium.copyWith(
+        color: enabled ? AppColors.textPrimary : AppColors.textHint,
+      ),
       decoration: InputDecoration(
         labelText: isRequired ? '$label *' : label,
         hintText: hint,

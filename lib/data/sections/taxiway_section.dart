@@ -1,13 +1,13 @@
 // lib/features/inspection/widgets/taxiway_section_widget.dart
 
-import 'package:falcon_system/data/sections/taxiway_element_score.dart';
-import 'package:falcon_system/data/sections/taxiway_evaluation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_fonts.dart';
 
 import 'taxiway_element_card.dart';
+import 'taxiway_element_score.dart';
+import 'taxiway_evaluation.dart';
 
 /// القسم الكامل لتقييم ممرات التاكسي
 /// يُستخدم داخل _buildTaxiwayStep() في EvaluationFormScreen
@@ -353,7 +353,25 @@ class _CriticalFindingsPanel extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           ...elements.map((el) {
-            final elementMeta = meta.firstWhere((m) => m.key == el.key);
+            TaxiwayElementMeta? metaForEl;
+            for (final m in meta) {
+              if (m.key == el.key) {
+                metaForEl = m;
+                break;
+              }
+            }
+            if (metaForEl == null) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  'عنصر (${el.key}) — بيانات قديمة أو غير متطابقة',
+                  style: AppFonts.labelSmall.copyWith(
+                    color: const Color(0xFFB71C1C),
+                  ),
+                ),
+              );
+            }
+            final elementMeta = metaForEl;
             return Padding(
               padding: const EdgeInsets.only(bottom: 6),
               child: Row(

@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:io' show Directory, File, Platform;
+
 import 'package:falcon_system/data/models/admin_profile.dart';
+import 'package:falcon_system/data/models/admin_profile_hive_adapter.dart';
 import 'package:falcon_system/data/models/aerodrome.dart';
 import 'package:falcon_system/data/models/aircraft.dart';
 import 'package:falcon_system/data/models/airport_manager.dart';
@@ -17,10 +21,12 @@ import 'package:falcon_system/data/sections/runway_element_score.dart';
 import 'package:falcon_system/data/sections/runway_evaluation.dart';
 import 'package:falcon_system/data/sections/sms_element_score.dart';
 import 'package:falcon_system/data/sections/sms_evaluation.dart';
-import 'package:falcon_system/data/sections/taxiway_element_score.dart';
-import 'package:falcon_system/data/sections/taxiway_evaluation.dart';
+import '../../data/sections/taxiway_element_score.dart';
+import '../../data/sections/taxiway_evaluation.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../constants/hive_keys.dart';
 
@@ -46,6 +52,13 @@ class HiveService {
   static bool _initialized = false;
   static bool get isInitialized => _initialized;
 
+  /// In-flight first init so parallel `init()` calls (e.g. main + saveAdminProfile)
+  /// cannot run `Hive.initFlutter()` twice or race on `_openBoxes`.
+  static Completer<void>? _firstInitCompleter;
+
+  /// Hive on-disk directory (non-web). Used to delete stale `.lock` / `.hive` files.
+  static String? _hiveDirectory;
+
   static String? _currentAdminEmail;
   static String? get currentAdminEmail => _currentAdminEmail;
   static void setCurrentAdminEmail(String email) =>
@@ -57,35 +70,149 @@ class HiveService {
 
   static Future<void> init() async {
     if (_initialized) {
-      debugPrint('HiveService: already initialized — skipping init');
-      // Still verify boxes are open, in case of hot reload
-      for (final name in _boxNames) {
-        if (!Hive.isBoxOpen(name)) {
-          debugPrint('  ⚠ Box "$name" unexpectedly closed — reopening');
-          // Reopen without type checking to avoid type mismatch errors
-          try {
-            await Hive.openBox(name);
-          } catch (e) {
-            debugPrint('  ⚠ Could not reopen "$name": $e');
-          }
-        }
-      }
+      debugPrint('HiveService: already initialized — verifying boxes');
+      await _reopenClosedBoxesTyped();
+      await _verifyAllBoxesOpen();
       return;
     }
 
-    await Hive.initFlutter();
-    _registerAdapters();
-    await _openBoxes();
-    _initialized = true;
-    debugPrint('✓ HiveService ready');
+    if (_firstInitCompleter != null) {
+      await _firstInitCompleter!.future;
+      await _reopenClosedBoxesTyped();
+      await _verifyAllBoxesOpen();
+      return;
+    }
+
+    final completer = Completer<void>();
+    _firstInitCompleter = completer;
+
+    try {
+      await _initHiveStorage();
+      _registerAdapters();
+      await _openBoxes();
+      await _verifyAllBoxesOpen();
+      _initialized = true;
+      completer.complete();
+      debugPrint('✓ HiveService ready');
+    } catch (e, st) {
+      completer.completeError(e, st);
+      rethrow;
+    } finally {
+      if (identical(_firstInitCompleter, completer)) {
+        _firstInitCompleter = null;
+      }
+    }
+  }
+
+  /// Opens a box with the same type as in [_openBoxes] so typed getters stay consistent.
+  static Future<void> _ensureBoxOpenByName(String name) async {
+    if (name == HiveKeys.adminProfileBox) {
+      await _openBox<AdminProfile>(name);
+    } else if (name == HiveKeys.aerodromesBox) {
+      await _openBox<Aerodrome>(name);
+    } else if (name == HiveKeys.airportManagersBox) {
+      await _openBox<AirportManager>(name);
+    } else if (name == HiveKeys.inspectionHeadBox) {
+      await _openBox<InspectionHead>(name);
+    } else if (name == HiveKeys.inspectionTeamBox) {
+      await _openBox<InspectionMember>(name);
+    } else if (name == HiveKeys.aircraftBox) {
+      await _openBox<Aircraft>(name);
+    } else if (name == HiveKeys.evaluationReportsBox) {
+      await _openBox<EvaluationReport>(name);
+    }
+  }
+
+  static Future<void> _reopenClosedBoxesTyped() async {
+    for (final name in _boxNames) {
+      if (!Hive.isBoxOpen(name)) {
+        debugPrint('  ⚠ Box "$name" closed — reopening (typed)');
+        await _ensureBoxOpenByName(name);
+      }
+    }
+  }
+
+  /// Guarantees every box from [_boxNames] is open before the app uses [adminBox] / [aerodromeBox] / …
+  /// Without this, a silent failure in [_openBox] left [_initialized] true and Windows/desktop builds
+  /// could navigate after login with some boxes still closed.
+  static Future<void> _verifyAllBoxesOpen() async {
+    for (final name in _boxNames) {
+      if (!Hive.isBoxOpen(name)) {
+        await _ensureBoxOpenByName(name);
+      }
+    }
+
+    var missing = _boxNames.where((n) => !Hive.isBoxOpen(n)).toList();
+    if (missing.isEmpty) return;
+
+    debugPrint('⚠ Hive: boxes still closed after open — recovery: $missing');
+    for (final name in missing) {
+      try {
+        if (Hive.isBoxOpen(name)) continue;
+        await _forceUnlockHiveFiles(name);
+        await Hive.deleteBoxFromDisk(name);
+      } catch (e) {
+        debugPrint('  ⚠ deleteBoxFromDisk("$name"): $e');
+        await _forceUnlockHiveFiles(name);
+      }
+      await _ensureBoxOpenByName(name);
+    }
+
+    missing = _boxNames.where((n) => !Hive.isBoxOpen(n)).toList();
+    if (missing.isNotEmpty) {
+      throw HiveError(
+        'Could not open Hive boxes: ${missing.join(", ")}. '
+        'If this persists, clear application data or reinstall.',
+      );
+    }
   }
 
   // ══════════════════════════════════════════════════════════════════════════
   // ADAPTERS
   // ══════════════════════════════════════════════════════════════════════════
 
+  static Future<void> _initHiveStorage() async {
+    if (kIsWeb) {
+      await Hive.initFlutter();
+      _hiveDirectory = null;
+      return;
+    }
+    // Avoid OneDrive-synced Documents (locks / cast races on Windows).
+    final dir = await getApplicationSupportDirectory();
+    _hiveDirectory =
+        '${dir.path}${Platform.pathSeparator}falcon_system_hive';
+    await Directory(_hiveDirectory!).create(recursive: true);
+    Hive.init(_hiveDirectory!);
+  }
+
+  /// Best-effort removal of stale lock/data files (errno 32 on Windows).
+  static Future<void> _forceUnlockHiveFiles(String boxName) async {
+    if (kIsWeb || _hiveDirectory == null) return;
+    final lower = boxName.toLowerCase();
+    final base = _hiveDirectory!;
+    final sep = Platform.pathSeparator;
+    for (final ext in ['.lock', '.hive']) {
+      final f = File('$base$sep$lower$ext');
+      for (var attempt = 0; attempt < 8; attempt++) {
+        try {
+          if (await f.exists()) await f.delete();
+          break;
+        } catch (_) {
+          await Future<void>.delayed(Duration(milliseconds: 60 * (attempt + 1)));
+        }
+      }
+    }
+  }
+
+  static bool _isHiveDeserializeFailure(Object e) {
+    final s = e.toString().toLowerCase();
+    return s.contains('subtype') ||
+        s.contains('type cast') ||
+        s.contains('is not a subtype');
+  }
+
   static void _registerAdapters() {
-    _reg(0, () => Hive.registerAdapter(AdminProfileAdapter()));
+    _reg(0, () => Hive.registerAdapter(AdminProfileHiveAdapter()));
     _reg(1, () => Hive.registerAdapter(AerodromeAdapter()));
     _reg(2, () => Hive.registerAdapter(AirportManagerAdapter()));
     _reg(3, () => Hive.registerAdapter(InspectionHeadAdapter()));
@@ -150,6 +277,9 @@ class HiveService {
       }
 
       debugPrint('⚠  "$name" error during open: $e');
+      if (_isHiveDeserializeFailure(e)) {
+        await _forceUnlockHiveFiles(name);
+      }
     }
 
     // ── Level 3a: box may have reopened during the catch — recheck ────────
@@ -167,6 +297,7 @@ class HiveService {
       return;
     } catch (e) {
       debugPrint('⚠  "$name" Level 3b failed: $e');
+      await _forceUnlockHiveFiles(name);
     }
 
     if (Hive.isBoxOpen(name)) return;
@@ -174,7 +305,14 @@ class HiveService {
     // ── Level 3c: nuclear — delete from disk and recreate ─────────────────
     try {
       if (Hive.isBoxOpen(name)) return;
-      await Hive.deleteBoxFromDisk(name);
+      await _forceUnlockHiveFiles(name);
+      try {
+        await Hive.deleteBoxFromDisk(name);
+      } catch (e) {
+        debugPrint('⚠  deleteBoxFromDisk("$name") retry after unlock: $e');
+        await _forceUnlockHiveFiles(name);
+        await Hive.deleteBoxFromDisk(name);
+      }
       if (Hive.isBoxOpen(name)) return;
       await Hive.openBox<T>(name);
       debugPrint('✓  "$name" recreated from scratch');

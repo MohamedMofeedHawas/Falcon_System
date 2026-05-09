@@ -1,0 +1,8 @@
+# Admin profile uses a hand-written [AdminProfileHiveAdapter] for tolerant reads.
+targets:
+  $default:
+    builders:
+      hive_generator|hive_generator:
+        generate_for:
+          exclude:
+            - lib/data/models/admin_profile.dart

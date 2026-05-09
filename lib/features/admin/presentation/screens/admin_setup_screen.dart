@@ -436,6 +436,8 @@ class _AdminSetupScreenState extends State<AdminSetupScreen> {
                 ),
                 const SizedBox(height: 12),
                 CustomDropdown(
+                  
+                  
                   label: AppStrings.nationality,
                   value: _nationality,
                   items: AppStrings.nationalities

@@ -1,69 +1,38 @@
 import 'dart:typed_data';
+
 import 'package:hive/hive.dart';
-import '../../core/constants/hive_keys.dart';
 
-part 'admin_profile.g.dart';
-
-@HiveType(typeId: HiveKeys.adminProfileTypeId)
+/// Persisted with [AdminProfileHiveAdapter] (hand-written for safe reads of legacy/corrupt cells).
 class AdminProfile extends HiveObject {
-  @HiveField(0)
   String id;
-  @HiveField(1)
   String fullName;
-  @HiveField(2)
   String email;
-  @HiveField(3)
   String nationality;
-  @HiveField(4)
   String nationalId;
-  @HiveField(5)
   String? rank;
-  @HiveField(6)
   int? age; // kept for backward compat — prefer dateOfBirth
-  @HiveField(7)
   int? flightHours;
-  @HiveField(8)
   List<String> phones;
-  @HiveField(9)
   String? governorate;
-  @HiveField(10)
   String? workplace;
-  @HiveField(11)
   DateTime? employmentDate;
-  @HiveField(12)
   bool hasLicense;
-  @HiveField(13)
   String? licenseNumber;
-  @HiveField(14)
   DateTime? licenseIssueDate;
-  @HiveField(15)
   DateTime? licenseExpiryDate;
-  @HiveField(16)
   String? photo;
-  @HiveField(17)
   DateTime createdAt;
-  @HiveField(18)
   DateTime updatedAt;
-  @HiveField(19)
   String? password;
-  @HiveField(20)
   List<String> whatsappNumbers;
-  @HiveField(21)
   String? residenceAddress;
-  @HiveField(22)
   String? customNationality;
-  @HiveField(23)
   String? adminSignatureText;
-  @HiveField(24)
   Uint8List? adminSignatureImage;
-  @HiveField(25)
   String? adminSignatureMode;
-  @HiveField(26)
   DateTime? adminSignatureSavedAt;
-  @HiveField(27)
-  DateTime? dateOfBirth; // ← NEW
-  @HiveField(28)
-  String? licenseIssuingAuthority; // ← NEW
+  DateTime? dateOfBirth;
+  String? licenseIssuingAuthority;
 
   AdminProfile({
     required this.id,
