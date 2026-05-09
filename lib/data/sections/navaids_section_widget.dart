@@ -188,8 +188,9 @@ class _NavaidsHeaderCard extends StatelessWidget {
   };
 
   // لون مميز للملاحة — كحلي فيروزي
-  static const Color _navAccent = Color(0xFF006064);
-  static const Color _navAccent2 = Color(0xFF00363A);
+
+     static const Color _navAccent = Color(0xFF37474F);
+  static const Color _navAccent2 = Color(0xFF102027);
 
   @override
   Widget build(BuildContext context) {

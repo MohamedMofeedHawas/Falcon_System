@@ -156,7 +156,7 @@ class _ApronElementCardState extends State<ApronElementCard>
                               // شارة "قد يُصفَّر" لمرافق دعم الطائرة
                               if (_isZeroRisk)
                                 Container(
-                                  margin: const EdgeInsets.only(right: 4),
+                                  margin: const EdgeInsets.symmetric(horizontal: 4),
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 6,
                                     vertical: 2,
@@ -177,7 +177,7 @@ class _ApronElementCardState extends State<ApronElementCard>
                               // شارة "ليلي ≥5" لعنصر الإرشاد
                               if (_isGuidanceElement)
                                 Container(
-                                  margin: const EdgeInsets.only(right: 4),
+                                  margin: const EdgeInsets.symmetric(horizontal: 4),
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 6,
                                     vertical: 2,
@@ -187,7 +187,7 @@ class _ApronElementCardState extends State<ApronElementCard>
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: const Text(
-                                    'ليلي ≥5',
+                                    'ليلي ≥ 5',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 10,

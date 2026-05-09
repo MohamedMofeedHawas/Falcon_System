@@ -118,7 +118,9 @@ class _MetHeaderCard extends StatelessWidget {
   };
 
   // لون خاص بالأرصاد — سماوي معدّل
-  static const Color _metAccent = Color(0xFF0288D1);
+ 
+   static const Color _apronAccent = Color(0xFF37474F);
+  static const Color _apronAccent2 = Color(0xFF102027);
 
   @override
   Widget build(BuildContext context) {
@@ -132,12 +134,12 @@ class _MetHeaderCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
-          colors: [Color(0xFF01579B), Color(0xFF0288D1)],
+          colors: [_apronAccent, _apronAccent2],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: _metAccent.withOpacity(0.35),
+            color: _apronAccent.withOpacity(0.35),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),

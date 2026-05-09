@@ -100,8 +100,9 @@ class _SmsHeaderCard extends StatelessWidget {
   };
 
   // لون مميز لـ SMS — بنفسجي داكن
-  static const Color _smsAccent = Color(0xFF6A1B9A);
-  static const Color _smsAccent2 = Color(0xFF4A148C);
+  
+   static const Color _smsAccent = Color(0xFF37474F);
+  static const Color _smsAccent2 = Color(0xFF102027);
 
   @override
   Widget build(BuildContext context) {

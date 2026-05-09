@@ -617,7 +617,7 @@ class _TagBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.only(right: 4),
+    margin: const EdgeInsets.symmetric(horizontal: 4),
     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
     decoration: BoxDecoration(
       color: color,

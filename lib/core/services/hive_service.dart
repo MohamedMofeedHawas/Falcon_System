@@ -13,318 +13,270 @@ import 'package:falcon_system/data/sections/navaids_element_score.dart';
 import 'package:falcon_system/data/sections/navaids_evaluation.dart';
 import 'package:falcon_system/data/sections/rffs_element_score.dart';
 import 'package:falcon_system/data/sections/rffs_evaluation.dart';
+import 'package:falcon_system/data/sections/runway_element_score.dart';
+import 'package:falcon_system/data/sections/runway_evaluation.dart';
 import 'package:falcon_system/data/sections/sms_element_score.dart';
 import 'package:falcon_system/data/sections/sms_evaluation.dart';
 import 'package:falcon_system/data/sections/taxiway_element_score.dart';
 import 'package:falcon_system/data/sections/taxiway_evaluation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../constants/hive_keys.dart';
 
+/// ──────────────────────────────────────────────────────────────────────────
+/// HiveService — singleton Hive manager (three-level box-open safety)
+///
+/// ROOT CAUSE of "box X is already open" errors
+/// ─────────────────────────────────────────────
+/// Hive.openBox<T>() throws if the box is already open, even if it's open
+/// with the same type T. This happens when:
+///   a) init() is called more than once (hot-reload, reinit after logout).
+///   b) A Cubit / Repository calls Hive.openBox<T>() directly in addition
+///      to HiveService.init() — both paths race to open the same box.
+///
+/// THE FIX — _openBox<T>() uses three progressive guards so it CANNOT throw:
+///   Level 1  isBoxOpen()  check  → return immediately (zero I/O).
+///   Level 2  catch HiveError "already open" → adopt the existing box.
+///   Level 3  corruption recovery (clear → reopen → delete+recreate).
+/// ──────────────────────────────────────────────────────────────────────────
 class HiveService {
-  static bool _initialized = false;
+  HiveService._();
 
+  static bool _initialized = false;
+  static bool get isInitialized => _initialized;
 
   static String? _currentAdminEmail;
   static String? get currentAdminEmail => _currentAdminEmail;
-  static void setCurrentAdminEmail(String email) {
-    _currentAdminEmail = email.trim().toLowerCase();
-  }
+  static void setCurrentAdminEmail(String email) =>
+      _currentAdminEmail = email.trim().toLowerCase();
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // INIT
+  // ══════════════════════════════════════════════════════════════════════════
 
   static Future<void> init() async {
-    if (_initialized) return;
+    if (_initialized) {
+      debugPrint('HiveService: already initialized — skipping');
+      return;
+    }
     await Hive.initFlutter();
     _registerAdapters();
     await _openBoxes();
     _initialized = true;
+    debugPrint('✓ HiveService ready');
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ADAPTERS
+  // ══════════════════════════════════════════════════════════════════════════
 
   static void _registerAdapters() {
-    Hive.registerAdapter(AdminProfileAdapter());
-    Hive.registerAdapter(RffsElementScoreAdapter());
-    Hive.registerAdapter(RffsEvaluationAdapter());
-    Hive.registerAdapter(ApronElementScoreAdapter());
-    Hive.registerAdapter(ApronEvaluationAdapter());
-    Hive.registerAdapter(SmsElementScoreAdapter());
-    Hive.registerAdapter(SmsEvaluationAdapter());
-    Hive.registerAdapter(AerodromeAdapter());
-    Hive.registerAdapter(AirportManagerAdapter());
-    Hive.registerAdapter(InspectionHeadAdapter());
-    Hive.registerAdapter(InspectionMemberAdapter());
-    Hive.registerAdapter(AircraftAdapter());
-    Hive.registerAdapter(EvaluationReportAdapter());
-    Hive.registerAdapter(TaxiwayElementScoreAdapter());
-    Hive.registerAdapter(TaxiwayEvaluationAdapter());
-    Hive.registerAdapter(MetElementScoreAdapter());
-    Hive.registerAdapter(NavaidsElementScoreAdapter());
-    Hive.registerAdapter(NavaidsEvaluationAdapter());
-    Hive.registerAdapter(MetEvaluationAdapter());
+    _reg(0, () => Hive.registerAdapter(AdminProfileAdapter()));
+    _reg(1, () => Hive.registerAdapter(AerodromeAdapter()));
+    _reg(2, () => Hive.registerAdapter(AirportManagerAdapter()));
+    _reg(3, () => Hive.registerAdapter(InspectionHeadAdapter()));
+    _reg(4, () => Hive.registerAdapter(InspectionMemberAdapter()));
+    _reg(5, () => Hive.registerAdapter(AircraftAdapter()));
+    _reg(6, () => Hive.registerAdapter(EvaluationReportAdapter()));
+    _reg(7, () => Hive.registerAdapter(TaxiwayElementScoreAdapter()));
+    _reg(8, () => Hive.registerAdapter(TaxiwayEvaluationAdapter()));
+    _reg(9, () => Hive.registerAdapter(MetElementScoreAdapter()));
+    _reg(10, () => Hive.registerAdapter(MetEvaluationAdapter()));
+    _reg(11, () => Hive.registerAdapter(ApronElementScoreAdapter()));
+    _reg(12, () => Hive.registerAdapter(ApronEvaluationAdapter()));
+    _reg(13, () => Hive.registerAdapter(RffsElementScoreAdapter()));
+    _reg(14, () => Hive.registerAdapter(RffsEvaluationAdapter()));
+    _reg(15, () => Hive.registerAdapter(SmsElementScoreAdapter()));
+    _reg(16, () => Hive.registerAdapter(SmsEvaluationAdapter()));
+    _reg(17, () => Hive.registerAdapter(NavaidsElementScoreAdapter()));
+    _reg(18, () => Hive.registerAdapter(NavaidsEvaluationAdapter()));
+    _reg(19, () => Hive.registerAdapter(RunwayElementScoreAdapter()));
+    _reg(20, () => Hive.registerAdapter(RunwayEvaluationAdapter()));
   }
+
+  static void _reg(int id, VoidCallback fn) {
+    if (!Hive.isAdapterRegistered(id)) fn();
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // BOX OPENING
+  // ══════════════════════════════════════════════════════════════════════════
 
   static Future<void> _openBoxes() async {
-    await _safeOpenBox<AdminProfile>(HiveKeys.adminProfileBox);
-    await _safeOpenBox<Aerodrome>(HiveKeys.aerodromesBox);
-    await _safeOpenBox<AirportManager>(HiveKeys.airportManagersBox);
-    await _safeOpenBox<InspectionHead>(HiveKeys.inspectionHeadBox);
-    await _safeOpenBox<InspectionMember>(HiveKeys.inspectionTeamBox);
-    await _safeOpenBox<Aircraft>(HiveKeys.aircraftBox);
-    await _safeOpenBox<EvaluationReport>(HiveKeys.evaluationReportsBox);
+    await _openBox<AdminProfile>(HiveKeys.adminProfileBox);
+    await _openBox<Aerodrome>(HiveKeys.aerodromesBox);
+    await _openBox<AirportManager>(HiveKeys.airportManagersBox);
+    await _openBox<InspectionHead>(HiveKeys.inspectionHeadBox);
+    await _openBox<InspectionMember>(HiveKeys.inspectionTeamBox);
+    await _openBox<Aircraft>(HiveKeys.aircraftBox);
+    await _openBox<EvaluationReport>(HiveKeys.evaluationReportsBox);
   }
 
-  static Future<void> _safeOpenBox<T>(String boxName) async {
-   
-    if (Hive.isBoxOpen(boxName)) {
-      final box = Hive.box(boxName);
-      await box.close();
-    }
-
-  
-    try {
-      await Hive.openBox<T>(boxName);
-      debugPrint('✓ Box $boxName opened successfully');
+  static Future<void> _openBox<T>(String name) async {
+    // ── Level 1: already open → nothing to do ────────────────────────────
+    if (Hive.isBoxOpen(name)) {
+      debugPrint('↩  "$name" already open — reusing');
       return;
-    } catch (e) {
-      final errorStr = e.toString();
-      debugPrint('⚠ Error opening box $boxName: $e');
-
-     
-      if (errorStr.contains('is not a subtype')) {
-        debugPrint('  ⚠ Detected corrupted/mismatched data - will clear');
-      }
     }
 
-   
-    await Future.delayed(const Duration(milliseconds: 300));
-
- 
+    // ── Level 2: normal open, with targeted HiveError catch ──────────────
     try {
-      if (Hive.isBoxOpen(boxName)) {
-        final box = Hive.box(boxName);
-        await box.close();
+      await Hive.openBox<T>(name);
+      debugPrint('✓  "$name" opened');
+      return;
+    } on HiveError catch (e) {
+      final msg = e.message.toLowerCase();
+
+      // "is already open" → some other code path opened it first — adopt it.
+      // This is the exact error from the bug report.
+      if (msg.contains('already open')) {
+        debugPrint('↩  "$name" adopted (opened externally)');
+        return;
       }
-    } catch (_) {}
 
-  
+      debugPrint('⚠  "$name" HiveError: ${e.message}');
+    } catch (e) {
+      debugPrint('⚠  "$name" error: $e');
+    }
+
+    // ── Level 3a: box may have reopened during the catch — recheck ────────
+    if (Hive.isBoxOpen(name)) return;
+
+    // ── Level 3b: data corruption → clear and reopen ──────────────────────
     try {
-      debugPrint('  → Clearing corrupted data in $boxName');
-      final box = await Hive.openBox<T>(boxName);
+      final box = await Hive.openBox<T>(name);
       if (box.isNotEmpty) {
-        debugPrint('    Removing ${box.length} corrupted records');
+        debugPrint('  → Clearing ${box.length} corrupted records in "$name"');
         await box.clear();
       }
-      debugPrint('✓ Box $boxName recovered');
+      debugPrint('✓  "$name" recovered (cleared)');
       return;
-    } catch (e) {
-      debugPrint('⚠ Cannot clear box: $e');
-    }
+    } catch (_) {}
 
-   
-    final backupName =
-        '${boxName}_backup_${DateTime.now().millisecondsSinceEpoch}';
+    if (Hive.isBoxOpen(name)) return;
+
+    // ── Level 3c: nuclear — delete from disk and recreate ─────────────────
     try {
-      debugPrint('  → Trying with backup location: $backupName');
-      
-      try {
-        await Hive.deleteBoxFromDisk(backupName);
-      } catch (_) {}
-
-      await Hive.openBox<T>(backupName);
-      debugPrint('✓ Box opened at backup location: $backupName');
-      return;
+      await Hive.deleteBoxFromDisk(name);
+      await Hive.openBox<T>(name);
+      debugPrint('✓  "$name" recreated from scratch');
     } catch (e) {
-      debugPrint('⚠ Backup location also failed: $e');
-    }
-
-  
-    try {
-      await Future.delayed(const Duration(milliseconds: 500));
-      await Hive.openBox<T>(boxName);
-      debugPrint('✓ Box $boxName finally opened');
-      return;
-    } catch (e) {
-     
-      debugPrint('⚠ FALLBACK: Box $boxName could not be initialized');
-      debugPrint('   Reason: $e');
-      debugPrint('   App will continue - some features may be limited');
+      debugPrint('❌  "$name" could not be initialized: $e');
     }
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PUBLIC: ensureOpen — use this in Cubits/Repositories instead of
+  //         calling Hive.openBox<T>() directly, which is the root cause.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /// Idempotent box accessor. Safe to call from any Cubit or Repository.
+  /// Replaces any direct Hive.openBox<T>() calls in the rest of the app.
+  static Future<Box<T>> ensureOpen<T>(String name) async {
+    await _openBox<T>(name);
+    return Hive.box<T>(name);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // LIFECYCLE
+  // ══════════════════════════════════════════════════════════════════════════
 
   static Future<void> close() async {
     await Hive.close();
     _initialized = false;
+    debugPrint('✓ HiveService closed');
   }
 
   static Future<void> clearAll() async {
-    final boxes = [
-      HiveKeys.adminProfileBox,
-      HiveKeys.aerodromesBox,
-      HiveKeys.airportManagersBox,
-      HiveKeys.inspectionHeadBox,
-      HiveKeys.inspectionTeamBox,
-      HiveKeys.aircraftBox,
-      HiveKeys.evaluationReportsBox,
-    ];
-
-    for (final boxName in boxes) {
+    for (final name in _boxNames) {
       try {
-        // Try to clear if box is open
-        if (Hive.isBoxOpen(boxName)) {
-          await Hive.box(boxName).clear();
+        if (Hive.isBoxOpen(name)) {
+          await Hive.box(name).clear();
         } else {
-          // If not open, try to delete
-          await Hive.deleteBoxFromDisk(boxName);
+          await Hive.deleteBoxFromDisk(name);
         }
-      } catch (_) {
-        // Silently ignore errors during clear/delete
+        debugPrint('✓ Cleared "$name"');
+      } catch (e) {
+        debugPrint('⚠ clearAll "$name": $e');
       }
     }
   }
 
-  // ── Box getters ───────────────────────────────────────────────────────────
-  static Box<AdminProfile> get adminBox {
-    if (!Hive.isBoxOpen(HiveKeys.adminProfileBox)) {
+  static const _boxNames = [
+    HiveKeys.adminProfileBox,
+    HiveKeys.aerodromesBox,
+    HiveKeys.airportManagersBox,
+    HiveKeys.inspectionHeadBox,
+    HiveKeys.inspectionTeamBox,
+    HiveKeys.aircraftBox,
+    HiveKeys.evaluationReportsBox,
+  ];
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // TYPED BOX GETTERS
+  // ══════════════════════════════════════════════════════════════════════════
+
+  static Box<AdminProfile> get adminBox => _get(HiveKeys.adminProfileBox);
+  static Box<Aerodrome> get aerodromeBox => _get(HiveKeys.aerodromesBox);
+  static Box<AirportManager> get managerBox =>
+      _get(HiveKeys.airportManagersBox);
+  static Box<InspectionHead> get inspectionHeadBox =>
+      _get(HiveKeys.inspectionHeadBox);
+  static Box<InspectionMember> get inspectionMemberBox =>
+      _get(HiveKeys.inspectionTeamBox);
+  static Box<Aircraft> get aircraftBox => _get(HiveKeys.aircraftBox);
+  static Box<EvaluationReport> get evaluationBox =>
+      _get(HiveKeys.evaluationReportsBox);
+
+  static Box<T> _get<T>(String name) {
+    if (!Hive.isBoxOpen(name)) {
       throw HiveError(
-        'Admin box not initialized. Call HiveService.init() first',
+        'Box "$name" is not open. '
+        'Ensure HiveService.init() is awaited before accessing boxes.',
       );
     }
-    return Hive.box(HiveKeys.adminProfileBox);
+    return Hive.box<T>(name);
   }
 
-  static Box<Aerodrome> get aerodromeBox {
-    if (!Hive.isBoxOpen(HiveKeys.aerodromesBox)) {
-      throw HiveError(
-        'Aerodrome box not initialized. Call HiveService.init() first',
-      );
-    }
-    return Hive.box(HiveKeys.aerodromesBox);
-  }
+  // ══════════════════════════════════════════════════════════════════════════
+  // ADMIN PROFILE
+  // ══════════════════════════════════════════════════════════════════════════
 
-  static Box<AirportManager> get managerBox {
-    if (!Hive.isBoxOpen(HiveKeys.airportManagersBox)) {
-      throw HiveError(
-        'Manager box not initialized. Call HiveService.init() first',
-      );
-    }
-    return Hive.box(HiveKeys.airportManagersBox);
-  }
-
-  static Box<InspectionHead> get inspectionHeadBox {
-    if (!Hive.isBoxOpen(HiveKeys.inspectionHeadBox)) {
-      throw HiveError(
-        'Inspection head box not initialized. Call HiveService.init() first',
-      );
-    }
-    return Hive.box(HiveKeys.inspectionHeadBox);
-  }
-
-  static Box<InspectionMember> get inspectionMemberBox {
-    if (!Hive.isBoxOpen(HiveKeys.inspectionTeamBox)) {
-      throw HiveError(
-        'Inspection member box not initialized. Call HiveService.init() first',
-      );
-    }
-    return Hive.box(HiveKeys.inspectionTeamBox);
-  }
-
-  static Box<Aircraft> get aircraftBox {
-    if (!Hive.isBoxOpen(HiveKeys.aircraftBox)) {
-      throw HiveError(
-        'Aircraft box not initialized. Call HiveService.init() first',
-      );
-    }
-    return Hive.box(HiveKeys.aircraftBox);
-  }
-
-  static Box<EvaluationReport> get evaluationBox {
-    if (!Hive.isBoxOpen(HiveKeys.evaluationReportsBox)) {
-      throw HiveError(
-        'Evaluation box not initialized. Call HiveService.init() first',
-      );
-    }
-    return Hive.box(HiveKeys.evaluationReportsBox);
-  }
-
-  // ── Admin Profile ─────────────────────────────────────────────────────────
-
-  /// Safe getter that attempts to open box if not available
-  static Future<Box<AdminProfile>?> _getAdminBoxSafe() async {
-    try {
-      if (Hive.isBoxOpen(HiveKeys.adminProfileBox)) {
-        return Hive.box(HiveKeys.adminProfileBox);
-      }
-      // Try to open if not open
-      return await Hive.openBox<AdminProfile>(HiveKeys.adminProfileBox);
-    } catch (e) {
-      print('⚠ Could not access admin box: $e');
-      return null;
-    }
-  }
-
-  /// Save admin using their **email** as the storage key.
-  /// This allows multiple admins, each identified by their email.
   static Future<void> saveAdminProfile(AdminProfile profile) async {
-    // Ensure initialization
-    if (!_initialized) {
-      await init();
-    }
-
-    final box = await _getAdminBoxSafe();
-    if (box == null) {
-      print('⚠ WARNING: Admin box not available - save failed');
-      return;
-    }
-
+    if (!_initialized) await init();
     try {
-      final key = profile.email.trim().toLowerCase();
-      await box.put(key, profile);
-      print('✓ Admin profile saved: $key');
+      await adminBox.put(profile.email.trim().toLowerCase(), profile);
+      debugPrint('✓ Admin saved: ${profile.email}');
     } catch (e) {
-      print('⚠ Error saving admin profile: $e');
+      debugPrint('⚠ saveAdminProfile: $e');
     }
   }
 
-  /// Get admin profile by email (case-insensitive).
-  /// Falls back to legacy 'admin' key for older data.
   static AdminProfile? getAdminByEmail(String email) {
-    if (!Hive.isBoxOpen(HiveKeys.adminProfileBox)) {
-      return null;
-    }
+    if (!Hive.isBoxOpen(HiveKeys.adminProfileBox)) return null;
     final key = email.trim().toLowerCase();
-    // ① Direct email-key lookup (new storage format)
     final direct = adminBox.get(key);
     if (direct is AdminProfile) return direct;
-
-    // ② Legacy 'admin' key — check if email matches
     final legacy = adminBox.get('admin');
     if (legacy is AdminProfile && legacy.email.trim().toLowerCase() == key) {
       return legacy;
     }
-
-    // ③ Full scan (migration edge case)
     for (final k in adminBox.keys) {
       final p = adminBox.get(k);
-      if (p is AdminProfile && p.email.trim().toLowerCase() == key) {
-        return p;
-      }
+      if (p is AdminProfile && p.email.trim().toLowerCase() == key) return p;
     }
     return null;
   }
 
-  /// Returns the profile of the currently logged-in admin.
-  /// Falls back to the first admin found (useful during initial setup).
   static AdminProfile? getAdminProfile() {
-    if (!Hive.isBoxOpen(HiveKeys.adminProfileBox)) {
-      return null;
-    }
+    if (!Hive.isBoxOpen(HiveKeys.adminProfileBox)) return null;
     if (_currentAdminEmail != null) {
       final p = getAdminByEmail(_currentAdminEmail!);
       if (p != null) return p;
     }
-    // Try legacy 'admin' key
     final legacy = adminBox.get('admin');
     if (legacy is AdminProfile) return legacy;
-    // First value in box
     for (final k in adminBox.keys) {
       final p = adminBox.get(k);
       if (p is AdminProfile) return p;
@@ -332,336 +284,25 @@ class HiveService {
     return null;
   }
 
-  /// All registered admins (for admin list screen if needed later)
   static List<AdminProfile> getAllAdmins() {
-    if (!Hive.isBoxOpen(HiveKeys.adminProfileBox)) {
-      return [];
-    }
-    final result = <AdminProfile>[];
+    if (!Hive.isBoxOpen(HiveKeys.adminProfileBox)) return [];
     final seen = <String>{};
-    for (final k in adminBox.keys) {
-      final p = adminBox.get(k);
-      if (p is AdminProfile && seen.add(p.id)) {
-        result.add(p);
-      }
-    }
-    return result;
-  }
-}
-
-/*
-import 'package:flutter/foundation.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-
-import '../constants/hive_keys.dart';
-
-import 'package:falcon_system/data/models/admin_profile.dart';
-import 'package:falcon_system/data/models/aerodrome.dart';
-import 'package:falcon_system/data/models/aircraft.dart';
-import 'package:falcon_system/data/models/airport_manager.dart';
-import 'package:falcon_system/data/models/evaluation_report.dart';
-import 'package:falcon_system/data/models/inspection_head.dart';
-import 'package:falcon_system/data/models/inspection_member.dart';
-
-import 'package:falcon_system/data/sections/apron_element_score.dart';
-import 'package:falcon_system/data/sections/apron_evaluation.dart';
-
-import 'package:falcon_system/data/sections/met_element_score.dart';
-import 'package:falcon_system/data/sections/met_evaluation.dart';
-
-import 'package:falcon_system/data/sections/rffs_element_score.dart';
-import 'package:falcon_system/data/sections/rffs_evaluation.dart';
-
-import 'package:falcon_system/data/sections/taxiway_element_score.dart';
-import 'package:falcon_system/data/sections/taxiway_evaluation.dart';
-
-class HiveService {
-  HiveService._();
-
-  static bool _initialized = false;
-
-  /// ─────────────────────────────────────────────
-  /// Current Logged In Admin
-  /// ─────────────────────────────────────────────
-  static String? _currentAdminEmail;
-
-  static String? get currentAdminEmail => _currentAdminEmail;
-
-  static void setCurrentAdminEmail(String email) {
-    _currentAdminEmail = email.trim().toLowerCase();
-  }
-
-  /// ─────────────────────────────────────────────
-  /// Initialize Hive
-  /// ─────────────────────────────────────────────
-  static Future<void> init() async {
-    if (_initialized) return;
-
-    await Hive.initFlutter();
-
-    _registerAdapters();
-
-    await _openBoxes();
-
-    _initialized = true;
-
-    debugPrint('✓ Hive initialized successfully');
-  }
-
-  /// ─────────────────────────────────────────────
-  /// Register Adapters Safely
-  /// ─────────────────────────────────────────────
-  static void _registerAdapters() {
-    _registerAdapterSafely(
-      0,
-      () => Hive.registerAdapter(AdminProfileAdapter()),
-    );
-
-    _registerAdapterSafely(1, () => Hive.registerAdapter(AerodromeAdapter()));
-
-    _registerAdapterSafely(
-      2,
-      () => Hive.registerAdapter(AirportManagerAdapter()),
-    );
-
-    _registerAdapterSafely(
-      3,
-      () => Hive.registerAdapter(InspectionHeadAdapter()),
-    );
-
-    _registerAdapterSafely(
-      4,
-      () => Hive.registerAdapter(InspectionMemberAdapter()),
-    );
-
-    _registerAdapterSafely(5, () => Hive.registerAdapter(AircraftAdapter()));
-
-    _registerAdapterSafely(
-      6,
-      () => Hive.registerAdapter(EvaluationReportAdapter()),
-    );
-
-    _registerAdapterSafely(
-      7,
-      () => Hive.registerAdapter(TaxiwayElementScoreAdapter()),
-    );
-
-    _registerAdapterSafely(
-      8,
-      () => Hive.registerAdapter(TaxiwayEvaluationAdapter()),
-    );
-
-    _registerAdapterSafely(
-      9,
-      () => Hive.registerAdapter(MetElementScoreAdapter()),
-    );
-
-    _registerAdapterSafely(
-      10,
-      () => Hive.registerAdapter(MetEvaluationAdapter()),
-    );
-
-    _registerAdapterSafely(
-      11,
-      () => Hive.registerAdapter(ApronElementScoreAdapter()),
-    );
-
-    _registerAdapterSafely(
-      12,
-      () => Hive.registerAdapter(ApronEvaluationAdapter()),
-    );
-
-    _registerAdapterSafely(
-      13,
-      () => Hive.registerAdapter(RffsElementScoreAdapter()),
-    );
-
-    _registerAdapterSafely(
-      14,
-      () => Hive.registerAdapter(RffsEvaluationAdapter()),
-    );
-  }
-
-  static void _registerAdapterSafely(int typeId, VoidCallback register) {
-    if (!Hive.isAdapterRegistered(typeId)) {
-      register();
-      debugPrint('✓ Adapter $typeId registered');
-    }
-  }
-
-  /// ─────────────────────────────────────────────
-  /// Open Boxes
-  /// ─────────────────────────────────────────────
-  static Future<void> _openBoxes() async {
-    await _openBoxSafely<AdminProfile>(HiveKeys.adminProfileBox);
-
-    await _openBoxSafely<Aerodrome>(HiveKeys.aerodromesBox);
-
-    await _openBoxSafely<AirportManager>(HiveKeys.airportManagersBox);
-
-    await _openBoxSafely<InspectionHead>(HiveKeys.inspectionHeadBox);
-
-    await _openBoxSafely<InspectionMember>(HiveKeys.inspectionTeamBox);
-
-    await _openBoxSafely<Aircraft>(HiveKeys.aircraftBox);
-
-    await _openBoxSafely<EvaluationReport>(HiveKeys.evaluationReportsBox);
-  }
-
-  /// ─────────────────────────────────────────────
-  /// Open Box Safely
-  /// ─────────────────────────────────────────────
-  static Future<void> _openBoxSafely<T>(String boxName) async {
-    try {
-      if (Hive.isBoxOpen(boxName)) {
-        debugPrint('✓ Box already open: $boxName');
-        return;
-      }
-
-      await Hive.openBox<T>(boxName);
-
-      debugPrint('✓ Opened box: $boxName');
-    } catch (e) {
-      debugPrint('⚠ Error opening box $boxName');
-      debugPrint(e.toString());
-
-      try {
-        await Hive.deleteBoxFromDisk(boxName);
-
-        await Hive.openBox<T>(boxName);
-
-        debugPrint('✓ Recreated corrupted box: $boxName');
-      } catch (e) {
-        debugPrint('❌ Failed recreating box: $boxName');
-        debugPrint(e.toString());
-      }
-    }
-  }
-
-  /// ─────────────────────────────────────────────
-  /// Close Hive
-  /// ─────────────────────────────────────────────
-  static Future<void> close() async {
-    await Hive.close();
-
-    _initialized = false;
-
-    debugPrint('✓ Hive closed');
-  }
-
-  /// ─────────────────────────────────────────────
-  /// Clear All Data
-  /// ─────────────────────────────────────────────
-  static Future<void> clearAll() async {
-    final boxes = [
-      HiveKeys.adminProfileBox,
-      HiveKeys.aerodromesBox,
-      HiveKeys.airportManagersBox,
-      HiveKeys.inspectionHeadBox,
-      HiveKeys.inspectionTeamBox,
-      HiveKeys.aircraftBox,
-      HiveKeys.evaluationReportsBox,
+    return [
+      for (final k in adminBox.keys)
+        if (adminBox.get(k) is AdminProfile &&
+            seen.add((adminBox.get(k) as AdminProfile).id))
+          adminBox.get(k) as AdminProfile,
     ];
-
-    for (final boxName in boxes) {
-      try {
-        if (Hive.isBoxOpen(boxName)) {
-          await Hive.box(boxName).clear();
-        } else {
-          await Hive.deleteBoxFromDisk(boxName);
-        }
-
-        debugPrint('✓ Cleared box: $boxName');
-      } catch (e) {
-        debugPrint('⚠ Failed clearing box: $boxName');
-      }
-    }
   }
 
-  /// ─────────────────────────────────────────────
-  /// Typed Boxes
-  /// ─────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  // GENERIC CRUD
+  // ══════════════════════════════════════════════════════════════════════════
 
-  static Box<AdminProfile> get adminBox =>
-      Hive.box<AdminProfile>(HiveKeys.adminProfileBox);
+  static Future<void> putItem<T>(Box<T> box, dynamic key, T item) =>
+      box.put(key, item);
 
-  static Box<Aerodrome> get aerodromeBox =>
-      Hive.box<Aerodrome>(HiveKeys.aerodromesBox);
+  static Future<void> deleteItem<T>(Box<T> box, dynamic key) => box.delete(key);
 
-  static Box<AirportManager> get managerBox =>
-      Hive.box<AirportManager>(HiveKeys.airportManagersBox);
-
-  static Box<InspectionHead> get inspectionHeadBox =>
-      Hive.box<InspectionHead>(HiveKeys.inspectionHeadBox);
-
-  static Box<InspectionMember> get inspectionMemberBox =>
-      Hive.box<InspectionMember>(HiveKeys.inspectionTeamBox);
-
-  static Box<Aircraft> get aircraftBox =>
-      Hive.box<Aircraft>(HiveKeys.aircraftBox);
-
-  static Box<EvaluationReport> get evaluationBox =>
-      Hive.box<EvaluationReport>(HiveKeys.evaluationReportsBox);
-
-  /// ─────────────────────────────────────────────
-  /// Admin Methods
-  /// ─────────────────────────────────────────────
-
-  static Future<void> saveAdminProfile(AdminProfile profile) async {
-    final key = profile.email.trim().toLowerCase();
-
-    await adminBox.put(key, profile);
-
-    debugPrint('✓ Admin saved: $key');
-  }
-
-  static AdminProfile? getAdminByEmail(String email) {
-    final key = email.trim().toLowerCase();
-
-    final admin = adminBox.get(key);
-
-    if (admin != null) {
-      return admin;
-    }
-
-    for (final item in adminBox.values) {
-      if (item.email.trim().toLowerCase() == key) {
-        return item;
-      }
-    }
-
-    return null;
-  }
-
-  static AdminProfile? getAdminProfile() {
-    if (_currentAdminEmail == null) {
-      if (adminBox.isEmpty) return null;
-
-      return adminBox.values.first;
-    }
-
-    return getAdminByEmail(_currentAdminEmail!);
-  }
-
-  static List<AdminProfile> getAllAdmins() {
-    return adminBox.values.toList();
-  }
-
-  /// ─────────────────────────────────────────────
-  /// Generic CRUD Helpers
-  /// ─────────────────────────────────────────────
-
-  static Future<void> putItem<T>(Box<T> box, dynamic key, T item) async {
-    await box.put(key, item);
-  }
-
-  static Future<void> deleteItem<T>(Box<T> box, dynamic key) async {
-    await box.delete(key);
-  }
-
-  static List<T> getAllItems<T>(Box<T> box) {
-    return box.values.toList();
-  }
+  static List<T> getAllItems<T>(Box<T> box) => box.values.toList();
 }
-
-*/

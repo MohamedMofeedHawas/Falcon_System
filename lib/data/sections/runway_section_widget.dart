@@ -1,83 +1,82 @@
-// lib/features/inspection/widgets/rffs_section_widget.dart
+// lib/features/inspection/widgets/runway_section_widget.dart
 
-import 'package:falcon_system/data/sections/rffs_element_score.dart';
-import 'package:falcon_system/data/sections/rffs_evaluation.dart';
+import 'package:falcon_system/data/sections/runway_element_score.dart';
+import 'package:falcon_system/data/sections/runway_evaluation.dart';
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_fonts.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_fonts.dart';
 
-import 'rffs_element_card.dart';
+import 'runway_element_card.dart';
 
-/// القسم الكامل لتقييم خدمات الإطفاء والإنقاذ (RFFS)
-/// يُستخدم داخل _buildRFFSStep() في EvaluationFormScreen
-class RffsSectionWidget extends StatelessWidget {
-  final RffsEvaluation evaluation;
-  final ValueChanged<RffsEvaluation> onChanged;
+/// القسم الكامل لتقييم حالة المدرج (Runway Inspection & Evaluation)
+/// يُستخدم داخل _buildRunwayStep() في EvaluationFormScreen
+class RunwaySectionWidget extends StatelessWidget {
+  final RunwayEvaluation evaluation;
+  final ValueChanged<RunwayEvaluation> onChanged;
 
-  const RffsSectionWidget({
+  const RunwaySectionWidget({
     super.key,
     required this.evaluation,
     required this.onChanged,
   });
 
-  // ─── تحديث عنصر بعينه ─────────────────────────────────────────────────────
-
-  RffsEvaluation _updateElement(String key, RffsElementScore updated) {
+  RunwayEvaluation _updateElement(String key, RunwayElementScore updated) {
     final e = evaluation;
-    return RffsEvaluation(
-      icaoCategory: key == 'icao_category' ? updated : e.icaoCategory,
-      fireVehicles: key == 'fire_vehicles' ? updated : e.fireVehicles,
-      extinguishingAgents: key == 'extinguishing_agents'
+    return RunwayEvaluation(
+      runwayLength: key == 'runway_length' ? updated : e.runwayLength,
+      runwayWidth: key == 'runway_width' ? updated : e.runwayWidth,
+      surfaceCondition: key == 'surface_condition'
           ? updated
-          : e.extinguishingAgents,
-      crewReadiness: key == 'crew_readiness' ? updated : e.crewReadiness,
-      responseTime: key == 'response_time' ? updated : e.responseTime,
-      communicationSystem: key == 'communication_system'
-          ? updated
-          : e.communicationSystem,
-      trainingCoordination: key == 'training_coordination'
-          ? updated
-          : e.trainingCoordination,
+          : e.surfaceCondition,
+      resa: key == 'resa' ? updated : e.resa,
+      markings: key == 'markings' ? updated : e.markings,
+      lighting: key == 'lighting' ? updated : e.lighting,
+      ofz: key == 'ofz' ? updated : e.ofz,
+      pcn: key == 'pcn' ? updated : e.pcn,
+      drainage: key == 'drainage' ? updated : e.drainage,
+      signs: key == 'signs' ? updated : e.signs,
+      fuelDrainage: key == 'fuel_drainage' ? updated : e.fuelDrainage,
+      edgesShoulders: key == 'edges_shoulders' ? updated : e.edgesShoulders,
     );
   }
 
-  RffsElementScore _scoreFor(String key) {
-    return switch (key) {
-      'icao_category' => evaluation.icaoCategory,
-      'fire_vehicles' => evaluation.fireVehicles,
-      'extinguishing_agents' => evaluation.extinguishingAgents,
-      'crew_readiness' => evaluation.crewReadiness,
-      'response_time' => evaluation.responseTime,
-      'communication_system' => evaluation.communicationSystem,
-      'training_coordination' => evaluation.trainingCoordination,
-      _ => RffsElementScore(key: key),
-    };
-  }
+  RunwayElementScore _scoreFor(String key) => switch (key) {
+    'runway_length' => evaluation.runwayLength,
+    'runway_width' => evaluation.runwayWidth,
+    'surface_condition' => evaluation.surfaceCondition,
+    'resa' => evaluation.resa,
+    'markings' => evaluation.markings,
+    'lighting' => evaluation.lighting,
+    'ofz' => evaluation.ofz,
+    'pcn' => evaluation.pcn,
+    'drainage' => evaluation.drainage,
+    'signs' => evaluation.signs,
+    'fuel_drainage' => evaluation.fuelDrainage,
+    'edges_shoulders' => evaluation.edgesShoulders,
+    _ => RunwayElementScore(key: key),
+  };
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── بطاقة الرأس ─────────────────────────────────────────────────
-        _RffsHeaderCard(evaluation: evaluation),
+        _RunwayHeaderCard(evaluation: evaluation),
         const SizedBox(height: 16),
 
-        // ── تحذير إيقاف العمليات ─────────────────────────────────────────
-        _RffsOperationalWarning(percentage: evaluation.percentage),
+        // تحذير الإغلاق
+        _RunwayClosureWarning(percentage: evaluation.percentage),
         const SizedBox(height: 16),
 
-        // ── عناصر التقييم السبعة ─────────────────────────────────────────
-        ...kRffsElementsMeta.asMap().entries.map((entry) {
+        // العناصر الـ 12
+        ...kRunwayElementsMeta.asMap().entries.map((entry) {
           final i = entry.key;
           final meta = entry.value;
-          final score = _scoreFor(meta.key);
-
-          return RffsElementCard(
+          return RunwayElementCard(
             elementIndex: i,
             meta: meta,
-            score: score,
+            score: _scoreFor(meta.key),
             onChanged: (updated) =>
                 onChanged(_updateElement(meta.key, updated)),
           );
@@ -85,17 +84,15 @@ class RffsSectionWidget extends StatelessWidget {
 
         const SizedBox(height: 8),
 
-        // ── العناصر الحرجة ───────────────────────────────────────────────
         if (evaluation.criticalElements.isNotEmpty) ...[
-          _RffsCriticalFindingsPanel(
+          _RunwayCriticalPanel(
             elements: evaluation.criticalElements,
-            meta: kRffsElementsMeta,
+            meta: kRunwayElementsMeta,
           ),
           const SizedBox(height: 16),
         ],
 
-        // ── جدول مرجع التصنيف ────────────────────────────────────────────
-        const _RffsGradeReferencePanel(),
+        const _RunwayGradeReferencePanel(),
         const SizedBox(height: 24),
       ],
     );
@@ -104,9 +101,9 @@ class RffsSectionWidget extends StatelessWidget {
 
 // ─── بطاقة الرأس ─────────────────────────────────────────────────────────────
 
-class _RffsHeaderCard extends StatelessWidget {
-  final RffsEvaluation evaluation;
-  const _RffsHeaderCard({required this.evaluation});
+class _RunwayHeaderCard extends StatelessWidget {
+  final RunwayEvaluation evaluation;
+  const _RunwayHeaderCard({required this.evaluation});
 
   Color _gradeColor(String key) => switch (key) {
     'excellent' => AppColors.excellent,
@@ -115,10 +112,9 @@ class _RffsHeaderCard extends StatelessWidget {
     _ => AppColors.unsafe,
   };
 
-  // لون مميز للإطفاء — برتقالي داكن
-
-       static const Color _rffsAccent = Color(0xFF37474F);
-  static const Color _rffsAccent2 = Color(0xFF102027);
+  // لون مميز للمدرج — رمادي معدني داكن
+  static const Color _rwyAccent = Color(0xFF37474F);
+  static const Color _rwyAccent2 = Color(0xFF102027);
 
   @override
   Widget build(BuildContext context) {
@@ -132,12 +128,12 @@ class _RffsHeaderCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
-          colors: [_rffsAccent2, _rffsAccent],
+          colors: [_rwyAccent2, _rwyAccent],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: _rffsAccent.withOpacity(0.40),
+            color: _rwyAccent.withOpacity(0.50),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -146,7 +142,6 @@ class _RffsHeaderCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // عنوان + أيقونة
           Row(
             children: [
               Container(
@@ -156,7 +151,7 @@ class _RffsHeaderCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
-                  Icons.local_fire_department,
+                  Icons.flight_takeoff_rounded,
                   color: Colors.white,
                   size: 22,
                 ),
@@ -166,14 +161,14 @@ class _RffsHeaderCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'خدمات الإطفاء والإنقاذ',
+                    'تدقيق وتقييم حالة المدرج',
                     style: AppFonts.headline6.copyWith(
                       color: Colors.white,
                       fontWeight: AppFonts.bold,
                     ),
                   ),
                   Text(
-                    'Rescue & Fire Fighting Services (RFFS)',
+                    'Runway Inspection & Evaluation',
                     style: AppFonts.labelSmall.copyWith(color: Colors.white70),
                   ),
                 ],
@@ -184,13 +179,12 @@ class _RffsHeaderCard extends StatelessWidget {
           ),
           const SizedBox(height: 18),
 
-          // إحصائيات
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _StatChip(
                 label: 'الدرجة الكلية',
-                value: '${evaluation.totalScore} / 70',
+                value: '${evaluation.totalScore} / 120',
                 color: Colors.white,
               ),
               _StatChip(
@@ -209,7 +203,6 @@ class _RffsHeaderCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          // شريط التقدم
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
@@ -228,7 +221,7 @@ class _RffsHeaderCard extends StatelessWidget {
                 style: AppFonts.labelSmall.copyWith(color: Colors.white60),
               ),
               Text(
-                'أقصى درجة = 7 × 10 = 70',
+                'أقصى درجة = 12 × 10 = 120',
                 style: AppFonts.labelSmall.copyWith(color: Colors.white60),
               ),
               Text(
@@ -243,15 +236,14 @@ class _RffsHeaderCard extends StatelessWidget {
   }
 }
 
-// ─── تحذير وقف عمليات الطيران ────────────────────────────────────────────────
+// ─── تحذير الإغلاق ───────────────────────────────────────────────────────────
 
-class _RffsOperationalWarning extends StatelessWidget {
+class _RunwayClosureWarning extends StatelessWidget {
   final double percentage;
-  const _RffsOperationalWarning({required this.percentage});
+  const _RunwayClosureWarning({required this.percentage});
 
   @override
   Widget build(BuildContext context) {
-    // إذا كانت النسبة أقل من 60% تظهر تحذير أحمر نابض
     final isDanger = percentage < 60;
 
     return AnimatedContainer(
@@ -259,12 +251,12 @@ class _RffsOperationalWarning extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       decoration: BoxDecoration(
-        color: isDanger ? const Color(0xFFFFEBEE) : const Color(0xFFFFF8E1),
+        color: isDanger ? const Color(0xFFFFEBEE) : const Color(0xFFE8F5E9),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isDanger
-              ? AppColors.unsafe.withOpacity(0.6)
-              : AppColors.acceptable.withOpacity(0.5),
+              ? AppColors.unsafe.withOpacity(0.55)
+              : AppColors.excellent.withOpacity(0.4),
           width: isDanger ? 1.5 : 1,
         ),
       ),
@@ -272,29 +264,34 @@ class _RffsOperationalWarning extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            isDanger ? Icons.flight_land : Icons.info_outline,
+            isDanger ? Icons.do_not_disturb_on : Icons.check_circle_outline,
             size: 18,
-            color: isDanger ? AppColors.unsafe : AppColors.acceptable,
+            color: isDanger ? AppColors.unsafe : AppColors.excellent,
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text.rich(
               TextSpan(
-                style: AppFonts.bodySmall.copyWith(
-                  color: isDanger
-                      ? const Color(0xFFB71C1C)
-                      : const Color(0xFFE65100),
-                  height: 1.5,
-                ),
+                style: AppFonts.bodySmall.copyWith(height: 1.5),
                 children: [
                   TextSpan(
-                    text: isDanger ? '⛔ تحذير ICAO: ' : '📋 تذكير: ',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    text: isDanger ? '⛔ توصية: ' : '✅ وضع المدرج: ',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isDanger
+                          ? const Color(0xFFB71C1C)
+                          : const Color(0xFF2E7D32),
+                    ),
                   ),
                   TextSpan(
                     text: isDanger
-                        ? 'النسبة أقل من 60% → إيقاف عمليات الطيران فوراً في بعض الدول وفق ICAO Annex 14.'
-                        : 'الفئة المعلنة الأقل من المطلوب أو نقص فرد مؤهّل يُخفّض الفئة الفعلية بمستوى كامل.',
+                        ? 'النسبة أقل من 60% → يُوصى بإغلاق المدرج حتى الإصلاح'
+                        : 'المدرج في حالة مقبولة — تابع باقي العناصر للحصول على تقييم شامل',
+                    style: TextStyle(
+                      color: isDanger
+                          ? const Color(0xFFB71C1C)
+                          : const Color(0xFF1B5E20),
+                    ),
                   ),
                 ],
               ),
@@ -308,14 +305,10 @@ class _RffsOperationalWarning extends StatelessWidget {
 
 // ─── لوحة العناصر الحرجة ─────────────────────────────────────────────────────
 
-class _RffsCriticalFindingsPanel extends StatelessWidget {
-  final List<RffsElementScore> elements;
-  final List<RffsElementMeta> meta;
-
-  const _RffsCriticalFindingsPanel({
-    required this.elements,
-    required this.meta,
-  });
+class _RunwayCriticalPanel extends StatelessWidget {
+  final List<RunwayElementScore> elements;
+  final List<RunwayElementMeta> meta;
+  const _RunwayCriticalPanel({required this.elements, required this.meta});
 
   @override
   Widget build(BuildContext context) {
@@ -403,8 +396,11 @@ class _RffsCriticalFindingsPanel extends StatelessWidget {
 
 // ─── جدول مرجع التصنيف ────────────────────────────────────────────────────────
 
-class _RffsGradeReferencePanel extends StatelessWidget {
-  const _RffsGradeReferencePanel();
+class _RunwayGradeReferencePanel extends StatelessWidget {
+  const _RunwayGradeReferencePanel();
+
+  static const Color _steel = Color(0xFF37474F);
+  static const Color _steelDark = Color(0xFF102027);
 
   @override
   Widget build(BuildContext context) {
@@ -422,23 +418,19 @@ class _RffsGradeReferencePanel extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFFE64A19).withOpacity(0.08),
+              color: _steel.withOpacity(0.08),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(14),
               ),
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.table_chart_outlined,
-                  size: 18,
-                  color: Color(0xFFBF360C),
-                ),
+                Icon(Icons.table_chart_outlined, size: 18, color: _steelDark),
                 const SizedBox(width: 8),
                 Text(
-                  'مرجع تصنيف خدمات الإطفاء والإنقاذ',
+                  'تصنيف حالة المدرج حسب النسبة',
                   style: AppFonts.labelLarge.copyWith(
-                    color: const Color(0xFFBF360C),
+                    color: _steelDark,
                     fontWeight: AppFonts.bold,
                   ),
                 ),
@@ -449,13 +441,13 @@ class _RffsGradeReferencePanel extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE64A19).withOpacity(0.12),
+                    color: _steel.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    'ICAO Doc 9137',
+                    'ICAO Annex 14',
                     style: AppFonts.labelSmall.copyWith(
-                      color: const Color(0xFFBF360C),
+                      color: _steelDark,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -464,35 +456,33 @@ class _RffsGradeReferencePanel extends StatelessWidget {
             ),
           ),
 
-          // رأس الأعمدة
           _TableHeaderRow(),
 
-          // صفوف البيانات
           const _GradeRow(
-            range: '≥ 90%',
+            range: '90% – 100%',
             gradeAr: 'ممتاز',
-            action: 'جاهز لأكبر الحوادث — لا يتطلب تدخلاً',
+            action: 'صالح لأعلى الاستخدامات — لا تدخل مطلوب',
             color: AppColors.excellent,
             isAlternate: false,
           ),
           const _GradeRow(
             range: '75% – 89%',
             gradeAr: 'جيد',
-            action: 'يلزم تدريبات إضافية وصيانة دورية',
+            action: 'جيد مع ملاحظات بسيطة — صيانة وقائية',
             color: AppColors.good,
             isAlternate: true,
           ),
           const _GradeRow(
             range: '60% – 74%',
             gradeAr: 'مقبول',
-            action: 'الفئة الفعلية أقل من المعلنة — تدخل خلال شهر',
+            action: 'يحتاج صيانة خلال 3 أشهر — مراقبة مكثفة',
             color: AppColors.acceptable,
             isAlternate: false,
           ),
           const _GradeRow(
             range: '< 60%',
-            gradeAr: 'خطر',
-            action: '⛔ إيقاف عمليات الطيران فوراً في بعض الدول',
+            gradeAr: 'غير آمن',
+            action: '⛔ يُوصى بإغلاق المدرج حتى الإصلاح',
             color: AppColors.unsafe,
             isAlternate: true,
             isLast: true,
@@ -508,29 +498,58 @@ class _RffsGradeReferencePanel extends StatelessWidget {
                 bottom: Radius.circular(14),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Column(
               children: [
-                const Icon(Icons.functions, size: 16, color: Color(0xFF546E7A)),
-                const SizedBox(width: 6),
-                Text(
-                  'النسبة = (المجموع ÷ 70) × 100',
-                  style: AppFonts.labelMedium.copyWith(
-                    color: const Color(0xFF455A64),
-                    fontWeight: AppFonts.semiBold,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.functions,
+                      size: 16,
+                      color: Color(0xFF546E7A),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'النسبة = (المجموع ÷ 120) × 100',
+                      style: AppFonts.labelMedium.copyWith(
+                        color: const Color(0xFF455A64),
+                        fontWeight: AppFonts.semiBold,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Container(
+                      width: 1,
+                      height: 14,
+                      color: const Color(0xFF546E7A).withOpacity(0.3),
+                    ),
+                    const SizedBox(width: 16),
+                    Text(
+                      'أقصى درجة = 12 × 10 = 120',
+                      style: AppFonts.labelMedium.copyWith(
+                        color: const Color(0xFF455A64),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(height: 6),
+                // مثال من المستند
                 Container(
-                  width: 1,
-                  height: 14,
-                  color: const Color(0xFF546E7A).withOpacity(0.3),
-                ),
-                const SizedBox(width: 16),
-                Text(
-                  'أقصى درجة = 7 × 10 = 70',
-                  style: AppFonts.labelMedium.copyWith(
-                    color: const Color(0xFF455A64),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.good.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.good.withOpacity(0.25)),
+                  ),
+                  child: Text(
+                    'مثال: مجموع 101 من 120 → (101/120) × 100 = 84.2% → جيد',
+                    style: AppFonts.labelSmall.copyWith(
+                      color: AppColors.good,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ],
@@ -542,57 +561,53 @@ class _RffsGradeReferencePanel extends StatelessWidget {
   }
 }
 
-// ─── مكونات الجدول ────────────────────────────────────────────────────────────
-
 class _TableHeaderRow extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppColors.textSecondary.withOpacity(0.15)),
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    decoration: BoxDecoration(
+      border: Border(
+        bottom: BorderSide(color: AppColors.textSecondary.withOpacity(0.15)),
+      ),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: Text(
+            'النسبة',
+            style: AppFonts.labelSmall.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: AppFonts.semiBold,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              'النسبة',
-              style: AppFonts.labelSmall.copyWith(
-                color: AppColors.textSecondary,
-                fontWeight: AppFonts.semiBold,
-              ),
-              textAlign: TextAlign.center,
+        Expanded(
+          flex: 2,
+          child: Text(
+            'التصنيف',
+            style: AppFonts.labelSmall.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: AppFonts.semiBold,
             ),
+            textAlign: TextAlign.center,
           ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              'التصنيف',
-              style: AppFonts.labelSmall.copyWith(
-                color: AppColors.textSecondary,
-                fontWeight: AppFonts.semiBold,
-              ),
-              textAlign: TextAlign.center,
+        ),
+        Expanded(
+          flex: 4,
+          child: Text(
+            'الإجراء المطلوب',
+            style: AppFonts.labelSmall.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: AppFonts.semiBold,
             ),
+            textAlign: TextAlign.center,
           ),
-          Expanded(
-            flex: 4,
-            child: Text(
-              'الإجراء المطلوب',
-              style: AppFonts.labelSmall.copyWith(
-                color: AppColors.textSecondary,
-                fontWeight: AppFonts.semiBold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 }
 
 class _GradeRow extends StatelessWidget {
@@ -602,7 +617,6 @@ class _GradeRow extends StatelessWidget {
   final Color color;
   final bool isAlternate;
   final bool isLast;
-
   const _GradeRow({
     required this.range,
     required this.gradeAr,
@@ -680,8 +694,6 @@ class _GradeRow extends StatelessWidget {
     );
   }
 }
-
-// ─── مساعدات مشتركة ───────────────────────────────────────────────────────────
 
 class _GradePill extends StatelessWidget {
   final String grade;

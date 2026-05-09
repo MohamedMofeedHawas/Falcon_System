@@ -114,6 +114,9 @@ class _TaxiwayHeaderCard extends StatelessWidget {
   final TaxiwayEvaluation evaluation;
 
   const _TaxiwayHeaderCard({required this.evaluation});
+  
+   static const Color _smsAccent = Color(0xFF37474F);
+  static const Color _smsAccent2 = Color(0xFF102027);
 
   @override
   Widget build(BuildContext context) {
@@ -128,14 +131,14 @@ class _TaxiwayHeaderCard extends StatelessWidget {
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
           colors: [
-            AppColors.primary.withOpacity(0.9),
-            AppColors.primary.withOpacity(0.6),
+            _smsAccent,
+            _smsAccent2,
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: _smsAccent.withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),

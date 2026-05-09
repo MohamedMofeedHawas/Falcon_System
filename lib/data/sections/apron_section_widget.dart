@@ -116,8 +116,9 @@ class _ApronHeaderCard extends StatelessWidget {
   };
 
   // لون مميز لساحات الوقوف — أخضر مزرق (Teal)
-  static const Color _apronAccent = Color(0xFF00796B);
-  static const Color _apronAccent2 = Color(0xFF004D40);
+
+   static const Color _apronAccent = Color(0xFF37474F);
+  static const Color _apronAccent2 = Color(0xFF102027);
 
   @override
   Widget build(BuildContext context) {

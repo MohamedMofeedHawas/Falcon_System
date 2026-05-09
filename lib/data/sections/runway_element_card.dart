@@ -1,20 +1,20 @@
-// lib/features/inspection/widgets/sms_element_card.dart
+// lib/features/inspection/widgets/runway_element_card.dart
 
-import 'package:falcon_system/data/sections/sms_element_score.dart';
-import 'package:falcon_system/data/sections/sms_evaluation.dart';
+import 'package:falcon_system/data/sections/runway_element_score.dart';
+import 'package:falcon_system/data/sections/runway_evaluation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_fonts.dart';
 
 
-class SmsElementCard extends StatefulWidget {
+class RunwayElementCard extends StatefulWidget {
   final int elementIndex;
-  final SmsElementMeta meta;
-  final SmsElementScore score;
-  final ValueChanged<SmsElementScore> onChanged;
+  final RunwayElementMeta meta;
+  final RunwayElementScore score;
+  final ValueChanged<RunwayElementScore> onChanged;
 
-  const SmsElementCard({
+  const RunwayElementCard({
     super.key,
     required this.elementIndex,
     required this.meta,
@@ -23,15 +23,21 @@ class SmsElementCard extends StatefulWidget {
   });
 
   @override
-  State<SmsElementCard> createState() => _SmsElementCardState();
+  State<RunwayElementCard> createState() => _RunwayElementCardState();
 }
 
-class _SmsElementCardState extends State<SmsElementCard>
+class _RunwayElementCardState extends State<RunwayElementCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _expandAnimation;
   bool _isExpanded = false;
   late TextEditingController _notesController;
+
+  // تعريف العناصر التي لها حالة خاصة
+  bool get _isOFZ => widget.meta.key == 'ofz';
+  bool get _isRESA => widget.meta.key == 'resa';
+  bool get _isSurface => widget.meta.key == 'surface_condition';
+  bool get _isLighting => widget.meta.key == 'lighting';
 
   @override
   void initState() {
@@ -78,12 +84,6 @@ class _SmsElementCardState extends State<SmsElementCard>
       _isExpanded ? _controller.forward() : _controller.reverse();
     });
   }
-
-  // عنصر تقييم المخاطر قد يُصفَّر إذا لم يوجد Risk Register
-  bool get _isZeroRisk => widget.meta.key == 'risk_assessment';
-
-  // عنصر التدريب له تحذير 10% خاص
-  bool get _isTrainingElement => widget.meta.key == 'sms_training';
 
   @override
   Widget build(BuildContext context) {
@@ -152,17 +152,17 @@ class _SmsElementCardState extends State<SmsElementCard>
                                   ),
                                 ),
                               ),
-                              // شارة "قد يُصفَّر" لتقييم المخاطر
-                              if (_isZeroRisk)
+                              // شارة خاصة للعناصر الحرجة
+                              if (widget.meta.isCritical)
                                 _TagBadge(
-                                  label: 'قد يُصفَّر',
+                                  label: 'حرج',
                                   color: AppColors.unsafe,
                                 ),
-                              // شارة "10% تحذير" للتدريب
-                              if (_isTrainingElement)
+                              // شارة خاصة لعنصر السطح
+                              if (_isSurface)
                                 _TagBadge(
-                                  label: '10% خطر',
-                                  color: const Color(0xFF7B1FA2),
+                                  label: '-2 / عيب',
+                                  color: const Color(0xFFB71C1C),
                                 ),
                             ],
                           ),
@@ -209,29 +209,49 @@ class _SmsElementCardState extends State<SmsElementCard>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // تحذيرات خاصة
-                        if (_isZeroRisk) ...[
-                          _SpecialWarning(
+                        if (_isOFZ) ...[
+                          _RunwaySpecialWarning(
                             icon: Icons.block,
                             color: AppColors.unsafe,
                             bgColor: const Color(0xFFFFEBEE),
                             message:
-                                'عدم وجود سجل مخاطر (Risk Register) = تقييم 0 — الـ SMS لا يعمل بدونه',
+                                'وجود أي عائق في OFZ = تقييم 0 فوري حتى إزالته — لا تفاوض',
                           ),
                           const SizedBox(height: 10),
                         ],
-                        if (_isTrainingElement) ...[
-                          _SpecialWarning(
-                            icon: Icons.group_off,
-                            color: const Color(0xFF7B1FA2),
-                            bgColor: const Color(0xFFF3E5F5),
+                        if (_isRESA) ...[
+                          _RunwaySpecialWarning(
+                            icon: Icons.emergency,
+                            color: AppColors.unsafe,
+                            bgColor: const Color(0xFFFFEBEE),
                             message:
-                                '10% من الموظفين فقط تدرَّبوا = نظام وهمي — يجب إعادة التدريب الشامل',
+                                'قصور RESA يهدد حياة الركاب عند الهبوط الصعب — أولوية إصلاح قصوى',
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (_isSurface) ...[
+                          _RunwaySpecialWarning(
+                            icon: Icons.remove_circle_outline,
+                            color: const Color(0xFFB71C1C),
+                            bgColor: const Color(0xFFFCE4EC),
+                            message:
+                                'كل عيب رئيسي = خصم درجتين تلقائياً — الهدف: 8 كحد أدنى',
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (_isLighting) ...[
+                          _RunwaySpecialWarning(
+                            icon: Icons.lightbulb_outline,
+                            color: AppColors.acceptable,
+                            bgColor: const Color(0xFFFFF8E1),
+                            message:
+                                'خلل في أضواء الاقتراب أو خط الوسط = هبوط خطر — إصلاح ليلة نفسها',
                           ),
                           const SizedBox(height: 10),
                         ],
 
                         // المعايير الفرعية
-                        _SmsSubCriteriaSection(
+                        _RunwaySubCriteriaSection(
                           meta: widget.meta,
                           checked: widget.score.subCriteriaChecked,
                           onChanged: (key, val) {
@@ -248,7 +268,7 @@ class _SmsElementCardState extends State<SmsElementCard>
                         const SizedBox(height: 14),
 
                         // تنبيه السلامة
-                        _SmsSafetyBanner(
+                        _RunwaySafetyBanner(
                           note: widget.meta.safetyNoteAr,
                           score: s,
                         ),
@@ -300,7 +320,7 @@ class _SmsElementCardState extends State<SmsElementCard>
                             ),
                           ),
                         ),
-                        // مقياس 0 ← 10
+                        // مقياس 0-10
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4),
                           child: Row(
@@ -371,8 +391,6 @@ class _SmsElementCardState extends State<SmsElementCard>
                             widget.score.copyWith(notes: val),
                           ),
                         ),
-
-                        // مرجع ICAO
                         const SizedBox(height: 10),
                         Row(
                           children: [
@@ -406,15 +424,14 @@ class _SmsElementCardState extends State<SmsElementCard>
   }
 }
 
-// ─── تحذير خاص قابل للتكوين ──────────────────────────────────────────────────
+// ─── تحذير خاص ───────────────────────────────────────────────────────────────
 
-class _SpecialWarning extends StatelessWidget {
+class _RunwaySpecialWarning extends StatelessWidget {
   final IconData icon;
   final Color color;
   final Color bgColor;
   final String message;
-
-  const _SpecialWarning({
+  const _RunwaySpecialWarning({
     required this.icon,
     required this.color,
     required this.bgColor,
@@ -422,43 +439,40 @@ class _SpecialWarning extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.4)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: AppFonts.labelSmall.copyWith(
-                color: color,
-                fontWeight: FontWeight.bold,
-              ),
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    decoration: BoxDecoration(
+      color: bgColor,
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: color.withOpacity(0.4)),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            message,
+            style: AppFonts.labelSmall.copyWith(
+              color: color,
+              fontWeight: FontWeight.bold,
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 }
 
 // ─── المعايير الفرعية ─────────────────────────────────────────────────────────
 
-class _SmsSubCriteriaSection extends StatelessWidget {
-  final SmsElementMeta meta;
+class _RunwaySubCriteriaSection extends StatelessWidget {
+  final RunwayElementMeta meta;
   final Map<String, bool> checked;
   final void Function(String key, bool val) onChanged;
-
-  const _SmsSubCriteriaSection({
+  const _RunwaySubCriteriaSection({
     required this.meta,
     required this.checked,
     required this.onChanged,
@@ -565,10 +579,10 @@ class _SmsSubCriteriaSection extends StatelessWidget {
 
 // ─── تنبيه السلامة ────────────────────────────────────────────────────────────
 
-class _SmsSafetyBanner extends StatelessWidget {
+class _RunwaySafetyBanner extends StatelessWidget {
   final String note;
   final int score;
-  const _SmsSafetyBanner({required this.note, required this.score});
+  const _RunwaySafetyBanner({required this.note, required this.score});
 
   @override
   Widget build(BuildContext context) {
@@ -610,8 +624,6 @@ class _SmsSafetyBanner extends StatelessWidget {
     );
   }
 }
-
-// ─── الشارات المشتركة ─────────────────────────────────────────────────────────
 
 class _TagBadge extends StatelessWidget {
   final String label;
