@@ -9,12 +9,15 @@ import 'package:falcon_system/data/sections/apron_element_score.dart';
 import 'package:falcon_system/data/sections/apron_evaluation.dart';
 import 'package:falcon_system/data/sections/met_element_score.dart';
 import 'package:falcon_system/data/sections/met_evaluation.dart';
+import 'package:falcon_system/data/sections/navaids_element_score.dart';
+import 'package:falcon_system/data/sections/navaids_evaluation.dart';
 import 'package:falcon_system/data/sections/rffs_element_score.dart';
 import 'package:falcon_system/data/sections/rffs_evaluation.dart';
 import 'package:falcon_system/data/sections/sms_element_score.dart';
 import 'package:falcon_system/data/sections/sms_evaluation.dart';
 import 'package:falcon_system/data/sections/taxiway_element_score.dart';
 import 'package:falcon_system/data/sections/taxiway_evaluation.dart';
+import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../constants/hive_keys.dart';
@@ -22,7 +25,7 @@ import '../constants/hive_keys.dart';
 class HiveService {
   static bool _initialized = false;
 
-  /// ── Current logged-in admin (set on successful login) ──────────────────
+
   static String? _currentAdminEmail;
   static String? get currentAdminEmail => _currentAdminEmail;
   static void setCurrentAdminEmail(String email) {
@@ -39,23 +42,24 @@ class HiveService {
 
   static void _registerAdapters() {
     Hive.registerAdapter(AdminProfileAdapter());
-    Hive.registerAdapter(RffsElementScoreAdapter()); 
-    Hive.registerAdapter(RffsEvaluationAdapter()); 
+    Hive.registerAdapter(RffsElementScoreAdapter());
+    Hive.registerAdapter(RffsEvaluationAdapter());
     Hive.registerAdapter(ApronElementScoreAdapter());
     Hive.registerAdapter(ApronEvaluationAdapter());
-      Hive.registerAdapter(SmsElementScoreAdapter());  
-      Hive.registerAdapter(SmsEvaluationAdapter());    
-
+    Hive.registerAdapter(SmsElementScoreAdapter());
+    Hive.registerAdapter(SmsEvaluationAdapter());
     Hive.registerAdapter(AerodromeAdapter());
     Hive.registerAdapter(AirportManagerAdapter());
     Hive.registerAdapter(InspectionHeadAdapter());
     Hive.registerAdapter(InspectionMemberAdapter());
     Hive.registerAdapter(AircraftAdapter());
     Hive.registerAdapter(EvaluationReportAdapter());
-    Hive.registerAdapter(TaxiwayElementScoreAdapter()); // typeId: 7
+    Hive.registerAdapter(TaxiwayElementScoreAdapter());
     Hive.registerAdapter(TaxiwayEvaluationAdapter());
-    Hive.registerAdapter(MetElementScoreAdapter()); // typeId: 9
-    Hive.registerAdapter(MetEvaluationAdapter()); // typeId: 10
+    Hive.registerAdapter(MetElementScoreAdapter());
+    Hive.registerAdapter(NavaidsElementScoreAdapter());
+    Hive.registerAdapter(NavaidsEvaluationAdapter());
+    Hive.registerAdapter(MetEvaluationAdapter());
   }
 
   static Future<void> _openBoxes() async {
@@ -69,32 +73,31 @@ class HiveService {
   }
 
   static Future<void> _safeOpenBox<T>(String boxName) async {
-    // First check if box is already open
+   
     if (Hive.isBoxOpen(boxName)) {
-      // Close it first to avoid conflicts
       final box = Hive.box(boxName);
       await box.close();
     }
 
-    // Try normal open
+  
     try {
       await Hive.openBox<T>(boxName);
-      print('✓ Box $boxName opened successfully');
+      debugPrint('✓ Box $boxName opened successfully');
       return;
     } catch (e) {
       final errorStr = e.toString();
-      print('⚠ Error opening box $boxName: $e');
+      debugPrint('⚠ Error opening box $boxName: $e');
 
-      // Detect if it's a type mismatch (corrupted data)
+     
       if (errorStr.contains('is not a subtype')) {
-        print('  ⚠ Detected corrupted/mismatched data - will clear');
+        debugPrint('  ⚠ Detected corrupted/mismatched data - will clear');
       }
     }
 
-    // Wait a moment in case of file locking issues
+   
     await Future.delayed(const Duration(milliseconds: 300));
 
-    // Try to close and clean up any partial handles
+ 
     try {
       if (Hive.isBoxOpen(boxName)) {
         final box = Hive.box(boxName);
@@ -102,50 +105,48 @@ class HiveService {
       }
     } catch (_) {}
 
-    // Try to safely clear corrupted data instead of deleting
-    // This works even if file is locked
+  
     try {
-      print('  → Clearing corrupted data in $boxName');
+      debugPrint('  → Clearing corrupted data in $boxName');
       final box = await Hive.openBox<T>(boxName);
       if (box.isNotEmpty) {
-        print('    Removing ${box.length} corrupted records');
+        debugPrint('    Removing ${box.length} corrupted records');
         await box.clear();
       }
-      print('✓ Box $boxName recovered');
+      debugPrint('✓ Box $boxName recovered');
       return;
     } catch (e) {
-      print('⚠ Cannot clear box: $e');
+      debugPrint('⚠ Cannot clear box: $e');
     }
 
-    // If we still can't open, create a backup name and try fresh box
+   
     final backupName =
         '${boxName}_backup_${DateTime.now().millisecondsSinceEpoch}';
     try {
-      print('  → Trying with backup location: $backupName');
-      // Try to use a different name to avoid locked file
+      debugPrint('  → Trying with backup location: $backupName');
+      
       try {
         await Hive.deleteBoxFromDisk(backupName);
       } catch (_) {}
 
       await Hive.openBox<T>(backupName);
-      print('✓ Box opened at backup location: $backupName');
+      debugPrint('✓ Box opened at backup location: $backupName');
       return;
     } catch (e) {
-      print('⚠ Backup location also failed: $e');
+      debugPrint('⚠ Backup location also failed: $e');
     }
 
-    // Last resort: just try to open fresh box again without file operations
+  
     try {
       await Future.delayed(const Duration(milliseconds: 500));
       await Hive.openBox<T>(boxName);
-      print('✓ Box $boxName finally opened');
+      debugPrint('✓ Box $boxName finally opened');
       return;
     } catch (e) {
-      // Don't throw - just log and continue
-      // The box getters will handle the missing box gracefully
-      print('⚠ FALLBACK: Box $boxName could not be initialized');
-      print('   Reason: $e');
-      print('   App will continue - some features may be limited');
+     
+      debugPrint('⚠ FALLBACK: Box $boxName could not be initialized');
+      debugPrint('   Reason: $e');
+      debugPrint('   App will continue - some features may be limited');
     }
   }
 

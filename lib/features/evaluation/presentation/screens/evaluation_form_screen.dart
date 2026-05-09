@@ -4,6 +4,8 @@ import 'package:falcon_system/data/sections/apron_evaluation.dart';
 import 'package:falcon_system/data/sections/apron_section_widget.dart';
 import 'package:falcon_system/data/sections/met_evaluation.dart';
 import 'package:falcon_system/data/sections/met_section_widget.dart';
+import 'package:falcon_system/data/sections/navaids_evaluation.dart';
+import 'package:falcon_system/data/sections/navaids_section_widget.dart';
 import 'package:falcon_system/data/sections/rffs_evaluation.dart';
 import 'package:falcon_system/data/sections/rffs_section_widget.dart';
 import 'package:falcon_system/data/sections/sms_evaluation.dart';
@@ -22,7 +24,6 @@ import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/widgets/evaluation_slider.dart';
 import '../../../../core/widgets/loading_overlay.dart';
 import '../../../../core/widgets/section_header.dart';
-import '../../../../core/widgets/signature_pad.dart';
 import '../../../../data/models/aerodrome.dart';
 import '../../../../data/models/aircraft.dart';
 import '../../../../data/models/airport_manager.dart';
@@ -80,7 +81,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
   ApronEvaluation _apronEvaluation = ApronEvaluation();
   RffsEvaluation _rffsModel = RffsEvaluation();
   MetEvaluation _metModel = MetEvaluation();
-  Map<String, dynamic> _navaidsEvaluation = {};
+  NavaidsEvaluation _navaidsModel = NavaidsEvaluation();
   Map<String, dynamic> _operationalEvaluation = {};
   SmsEvaluation _smsModel = SmsEvaluation();
   Map<String, dynamic> _documentsEvaluation = {};
@@ -226,7 +227,9 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
     );
     _rffsModel = RffsEvaluation.fromCompatibilityMap(evaluation.rffsEvaluation);
     _metModel = MetEvaluation.fromCompatibilityMap(evaluation.metEvaluation);
-    _navaidsEvaluation = evaluation.navaidsEvaluation;
+    _navaidsModel = NavaidsEvaluation.fromCompatibilityMap(
+      evaluation.navaidsEvaluation,
+    );
     _operationalEvaluation = evaluation.operationalEvaluation;
     _smsModel = SmsEvaluation.fromCompatibilityMap(evaluation.smsEvaluation);
     _documentsEvaluation = evaluation.documentsEvaluation;
@@ -358,7 +361,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
           children: [
             Stepper(
               currentStep: _currentStep,
-              onStepContinue: _currentStep < 11 ? _nextStep : null,
+              onStepContinue: _currentStep < 10 ? _nextStep : null,
               onStepCancel: _currentStep > 0 ? _previousStep : null,
               steps: [
                 _buildBasicInfoStep(),
@@ -371,7 +374,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                 _buildOperationalStep(),
                 _buildSMSStep(),
                 _buildDocumentsStep(),
-                _buildSignaturesStep(),
+                //  _buildSignaturesStep(),
                 _buildSummaryStep(),
               ],
             ),
@@ -656,15 +659,15 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
     );
   }
 
-  Step _buildNAVIDSStep() {
+ Step _buildNAVIDSStep() {
     return Step(
       title: const Text('المساعدات الملاحية'),
-      content: _buildEvaluationSection(
-        'تقييم المساعدات الملاحية',
-        _navaidsItems,
-        _navaidsEvaluation,
-        (key, value) => setState(() => _navaidsEvaluation[key] = value),
+      content: NavaidsSection(
+        evaluation: _navaidsModel,
+        onChanged: (updated) => setState(() => _navaidsModel = updated),
       ),
+      isActive: _currentStep >= 6,
+      state: _currentStep > 6 ? StepState.complete : StepState.indexed,
     );
   }
 
@@ -680,7 +683,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
     );
   }
 
- Step _buildSMSStep() {
+  Step _buildSMSStep() {
     return Step(
       title: const Text('نظام السلامة'),
       content: SmsSectionWidget(
@@ -704,7 +707,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
     );
   }
 
-  Step _buildSignaturesStep() {
+  /*Step _buildSignaturesStep() {
     return Step(
       title: const Text('التوقيعات'),
       content: Column(
@@ -737,7 +740,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
         ],
       ),
     );
-  }
+  }*/
 
   Step _buildSummaryStep() {
     final cubit = context.read<EvaluationCubit>();
@@ -747,7 +750,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
       'aprons': _apronEvaluation.toCompatibilityMap(),
       'rescueFire': _rffsModel.toCompatibilityMap(),
       'meteorological': _metModel.toCompatibilityMap(),
-      'navigationalAids': _navaidsEvaluation,
+      'navigationalAids': _navaidsModel.toCompatibilityMap(),
       'atc': _operationalEvaluation,
       'security': _smsModel.toCompatibilityMap(),
       'documentation': _documentsEvaluation,
@@ -932,7 +935,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
       'aprons': _apronEvaluation.toCompatibilityMap(),
       'rescueFire': _rffsModel.toCompatibilityMap(),
       'meteorological': _metModel.toCompatibilityMap(),
-      'navigationalAids': _navaidsEvaluation,
+      'navigationalAids': _navaidsModel.toCompatibilityMap(),
       'atc': _operationalEvaluation,
       'security': _smsModel.toCompatibilityMap(),
       'documentation': _documentsEvaluation,
@@ -967,7 +970,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
       apronEvaluation: _apronEvaluation.toCompatibilityMap(),
       rffsEvaluation: _rffsModel.toCompatibilityMap(),
       metEvaluation: _metModel.toCompatibilityMap(),
-      navaidsEvaluation: _navaidsEvaluation,
+      navaidsEvaluation: _navaidsModel.toCompatibilityMap(),
       operationalEvaluation: _operationalEvaluation,
       smsEvaluation: _smsModel.toCompatibilityMap(),
       documentsEvaluation: _documentsEvaluation,
