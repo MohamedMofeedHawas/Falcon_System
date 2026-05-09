@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive/hive.dart';
 
-import '../../../../core/constants/hive_keys.dart';
+import '../../../../core/services/hive_service.dart';
 import '../../../../data/models/evaluation_report.dart';
 
 part 'evaluation_state.dart';
@@ -9,7 +9,7 @@ part 'evaluation_state.dart';
 class EvaluationCubit extends Cubit<EvaluationState> {
   EvaluationCubit() : super(EvaluationInitial());
 
-  Box<dynamic> get _evaluationBox => Hive.box(HiveKeys.evaluationReportsBox);
+  Box<EvaluationReport> get _evaluationBox => HiveService.evaluationBox;
 
   Future<void> loadEvaluations() async {
     emit(EvaluationLoading());
@@ -43,13 +43,7 @@ class EvaluationCubit extends Cubit<EvaluationState> {
     }
   }
 
-  EvaluationReport? getEvaluationById(String id) {
-    final evaluation = _evaluationBox.get(id);
-    if (evaluation != null && evaluation is EvaluationReport) {
-      return evaluation;
-    }
-    return null;
-  }
+  EvaluationReport? getEvaluationById(String id) => _evaluationBox.get(id);
 
   List<dynamic> searchEvaluations(String query) {
     if (state is EvaluationLoaded) {

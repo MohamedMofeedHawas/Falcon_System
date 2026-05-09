@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive/hive.dart';
 
-import '../../../../core/constants/hive_keys.dart';
+import '../../../../core/services/hive_service.dart';
 import '../../../../data/models/aerodrome.dart';
 
 part 'aerodrome_state.dart';
@@ -9,7 +9,7 @@ part 'aerodrome_state.dart';
 class AerodromeCubit extends Cubit<AerodromeState> {
   AerodromeCubit() : super(AerodromeInitial());
 
-  Box<dynamic> get _aerodromeBox => Hive.box(HiveKeys.aerodromesBox);
+  Box<Aerodrome> get _aerodromeBox => HiveService.aerodromeBox;
 
   Future<void> loadAerodromes() async {
     emit(AerodromeLoading());
@@ -54,13 +54,7 @@ class AerodromeCubit extends Cubit<AerodromeState> {
     }
   }
 
-  Aerodrome? getAerodromeById(String id) {
-    final aerodrome = _aerodromeBox.get(id);
-    if (aerodrome != null && aerodrome is Aerodrome) {
-      return aerodrome;
-    }
-    return null;
-  }
+  Aerodrome? getAerodromeById(String id) => _aerodromeBox.get(id);
 
   List<dynamic> searchAerodromes(String query) {
     if (state is AerodromeLoaded) {

@@ -57,9 +57,22 @@ class HiveService {
 
   static Future<void> init() async {
     if (_initialized) {
-      debugPrint('HiveService: already initialized — skipping');
+      debugPrint('HiveService: already initialized — skipping init');
+      // Still verify boxes are open, in case of hot reload
+      for (final name in _boxNames) {
+        if (!Hive.isBoxOpen(name)) {
+          debugPrint('  ⚠ Box "$name" unexpectedly closed — reopening');
+          // Reopen without type checking to avoid type mismatch errors
+          try {
+            await Hive.openBox(name);
+          } catch (e) {
+            debugPrint('  ⚠ Could not reopen "$name": $e');
+          }
+        }
+      }
       return;
     }
+
     await Hive.initFlutter();
     _registerAdapters();
     await _openBoxes();
@@ -120,24 +133,23 @@ class HiveService {
       return;
     }
 
-    // ── Level 2: normal open, with targeted HiveError catch ──────────────
+    // ── Level 2: normal open, with comprehensive error catch ──────────────
     try {
       await Hive.openBox<T>(name);
       debugPrint('✓  "$name" opened');
       return;
-    } on HiveError catch (e) {
-      final msg = e.message.toLowerCase();
+    } catch (e) {
+      // Convert error to string and check for "already open" pattern.
+      // This is more robust than accessing .message directly.
+      final errorStr = e.toString().toLowerCase();
 
-      // "is already open" → some other code path opened it first — adopt it.
-      // This is the exact error from the bug report.
-      if (msg.contains('already open')) {
+      if (errorStr.contains('already open')) {
+        // Some other code path opened it first — just adopt the existing box.
         debugPrint('↩  "$name" adopted (opened externally)');
-        return;
+        if (Hive.isBoxOpen(name)) return;
       }
 
-      debugPrint('⚠  "$name" HiveError: ${e.message}');
-    } catch (e) {
-      debugPrint('⚠  "$name" error: $e');
+      debugPrint('⚠  "$name" error during open: $e');
     }
 
     // ── Level 3a: box may have reopened during the catch — recheck ────────
@@ -145,6 +157,7 @@ class HiveService {
 
     // ── Level 3b: data corruption → clear and reopen ──────────────────────
     try {
+      if (Hive.isBoxOpen(name)) return;
       final box = await Hive.openBox<T>(name);
       if (box.isNotEmpty) {
         debugPrint('  → Clearing ${box.length} corrupted records in "$name"');
@@ -152,13 +165,17 @@ class HiveService {
       }
       debugPrint('✓  "$name" recovered (cleared)');
       return;
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('⚠  "$name" Level 3b failed: $e');
+    }
 
     if (Hive.isBoxOpen(name)) return;
 
     // ── Level 3c: nuclear — delete from disk and recreate ─────────────────
     try {
+      if (Hive.isBoxOpen(name)) return;
       await Hive.deleteBoxFromDisk(name);
+      if (Hive.isBoxOpen(name)) return;
       await Hive.openBox<T>(name);
       debugPrint('✓  "$name" recreated from scratch');
     } catch (e) {
