@@ -11,10 +11,15 @@ import 'package:falcon_system/data/models/inspection_head.dart';
 import 'package:falcon_system/data/models/inspection_member.dart';
 import 'package:falcon_system/data/sections/apron_element_score.dart';
 import 'package:falcon_system/data/sections/apron_evaluation.dart';
+import 'package:falcon_system/data/sections/documents_element_score.dart';
 import 'package:falcon_system/data/sections/met_element_score.dart';
 import 'package:falcon_system/data/sections/met_evaluation.dart';
 import 'package:falcon_system/data/sections/navaids_element_score.dart';
 import 'package:falcon_system/data/sections/navaids_evaluation.dart';
+import 'package:falcon_system/data/sections/documents_evaluation.dart';
+
+import 'package:falcon_system/data/sections/operational_element_score.dart';
+import 'package:falcon_system/data/sections/operational_evaluation.dart';
 import 'package:falcon_system/data/sections/rffs_element_score.dart';
 import 'package:falcon_system/data/sections/rffs_evaluation.dart';
 import 'package:falcon_system/data/sections/runway_element_score.dart';
@@ -233,6 +238,10 @@ class HiveService {
     _reg(18, () => Hive.registerAdapter(NavaidsEvaluationAdapter()));
     _reg(19, () => Hive.registerAdapter(RunwayElementScoreAdapter()));
     _reg(20, () => Hive.registerAdapter(RunwayEvaluationAdapter()));
+    _reg(21, () => Hive.registerAdapter(OperationalElementScoreAdapter()));
+    _reg(22, () => Hive.registerAdapter(OperationalEvaluationAdapter()));
+    _reg(23, () => Hive.registerAdapter(DocumentsElementScoreAdapter()));
+    _reg(24, () => Hive.registerAdapter(DocumentsEvaluationAdapter()));
   }
 
   static void _reg(int id, VoidCallback fn) {

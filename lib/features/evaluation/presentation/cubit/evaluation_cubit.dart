@@ -62,17 +62,17 @@ class EvaluationCubit extends Cubit<EvaluationState> {
     double totalScore = 0;
     double totalWeight = 0;
 
-    // Section weights
+    // أوزان تتوافق مع ملخص التقرير الرسمي (المجموع = 1.0)
     final Map<String, double> sectionWeights = {
-      'runways': 0.15,
-      'aprons': 0.12,
-      'navigationalAids': 0.14,
-      'atc': 0.13,
-      'meteorological': 0.10,
-      'rescueFire': 0.12,
+      'runways': 0.20,
+      'taxiways': 0.15,
+      'aprons': 0.15,
+      'rescueFire': 0.20 / 3,
+      'meteorological': 0.20 / 3,
+      'navigationalAids': 0.20 / 3,
+      'atc': 0.10,
       'security': 0.10,
-      'maintenance': 0.08,
-      'documentation': 0.06,
+      'documentation': 0.10,
     };
 
     for (var entry in evaluations.entries) {
@@ -102,10 +102,9 @@ class EvaluationCubit extends Cubit<EvaluationState> {
   }
 
   String getOperationalDecision(double score) {
-    if (score >= 90) return 'ممتاز - آمن للتشغيل';
-    if (score >= 75) return 'جيد - آمن للتشغيل';
-    if (score >= 60) return 'مقبول - يحتاج مراقبة';
-    return 'غير آمن - يحتاج إجراءات فورية';
+    if (score >= 90) return 'صالح للتشغيل (≥ 90٪)';
+    if (score >= 60) return 'يحتاج تصحيح (60٪ – 89٪)';
+    return 'غير صالح (< 60٪) أو وجود عطل حرج دون خطة';
   }
 
   DateTime calculateReinspectionDate(double score) {

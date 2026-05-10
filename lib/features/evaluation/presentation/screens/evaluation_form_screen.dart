@@ -7,12 +7,16 @@ import 'package:falcon_system/data/sections/met_evaluation.dart';
 import 'package:falcon_system/data/sections/met_section_widget.dart';
 import 'package:falcon_system/data/sections/navaids_evaluation.dart';
 import 'package:falcon_system/data/sections/navaids_section_widget.dart';
+import 'package:falcon_system/data/sections/operational_evaluation.dart';
+import 'package:falcon_system/data/sections/operational_section_widget.dart';
 import 'package:falcon_system/data/sections/rffs_evaluation.dart';
 import 'package:falcon_system/data/sections/rffs_section_widget.dart';
 import 'package:falcon_system/data/sections/runway_evaluation.dart';
 import 'package:falcon_system/data/sections/runway_section_widget.dart';
 import 'package:falcon_system/data/sections/sms_evaluation.dart';
 import 'package:falcon_system/data/sections/sms_section_widget.dart';
+import 'package:falcon_system/data/sections/documents_evaluation.dart';
+import 'package:falcon_system/data/sections/documents_section_widget.dart';
 import '../../../../data/sections/taxiway_evaluation.dart';
 import '../../../../data/sections/taxiway_section.dart';
 import 'package:flutter/material.dart';
@@ -228,23 +232,11 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
   RffsEvaluation _rffsModel = RffsEvaluation();
   MetEvaluation _metModel = MetEvaluation();
   NavaidsEvaluation _navaidsModel = NavaidsEvaluation();
-  Map<String, dynamic> _operationalEvaluation = {};
+  OperationalEvaluation _operationalEvaluation = OperationalEvaluation();
   SmsEvaluation _smsModel = SmsEvaluation();
-  Map<String, dynamic> _documentsEvaluation = {};
+  DocumentsEvaluation _documentsEvaluation = DocumentsEvaluation();
 
-  // ── Section Items
-  final _operationalItems = [
-    'برج المراقبة',
-    'خدمة الحركة الجوية',
-    'إجراءات السلامة',
-    'التدريب المستمر',
-  ];
-  final _documentsItems = [
-    'دليل العمليات',
-    'شهادات الترخيص',
-    'سجلات الصيانة',
-    'وثائق التدريب',
-  ];
+  static const String _kDummyAerodromeName = 'Dummy Aerodrome — مطار افتراضي';
 
   // ── Completion tracking
   final Set<int> _completedSteps = {};
@@ -296,7 +288,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
     final teamState = context.read<TeamCubit>().state;
     final aircraftState = context.read<AircraftCubit>().state;
     if (aerodromeState is AerodromeLoaded)
-      _aerodromes = aerodromeState.aerodromes.cast<Aerodrome>();
+      _aerodromes = aerodromeState.allAerodromes.cast<Aerodrome>();
     if (managerState is ManagerLoaded) _managers = managerState.managers;
     if (teamState is TeamLoaded) {
       _heads = teamState.head;
@@ -326,9 +318,28 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
     _rffsModel = RffsEvaluation.fromCompatibilityMap(e.rffsEvaluation);
     _metModel = MetEvaluation.fromCompatibilityMap(e.metEvaluation);
     _navaidsModel = NavaidsEvaluation.fromCompatibilityMap(e.navaidsEvaluation);
-    _operationalEvaluation = e.operationalEvaluation;
+    _operationalEvaluation = OperationalEvaluation.fromCompatibilityMap(e.operationalEvaluation);
     _smsModel = SmsEvaluation.fromCompatibilityMap(e.smsEvaluation);
-    _documentsEvaluation = e.documentsEvaluation;
+    _documentsEvaluation = _parseDocumentsFromReport(e.documentsEvaluation);
+  }
+
+  /// يدعم الخرائط الجديدة (مفاتيح aerodrome_manual…) أو نموذج الشرائح القديم بالعربية.
+  DocumentsEvaluation _parseDocumentsFromReport(Map<String, dynamic> raw) {
+    if (raw.containsKey('aerodrome_manual')) {
+      return DocumentsEvaluation.fromCompatibilityMap(raw);
+    }
+    final conv = <String, dynamic>{};
+    void put(String target, String legacyKey) {
+      if (raw.containsKey(legacyKey)) conv[target] = raw[legacyKey];
+    }
+    put('aerodrome_manual', 'دليل العمليات');
+    put('licenses_validity', 'شهادات الترخيص');
+    put('regular_updates', 'سجلات الصيانة');
+    if (!conv.containsKey('regular_updates') &&
+        raw.containsKey('وثائق التدريب')) {
+      conv['regular_updates'] = raw['وثائق التدريب'];
+    }
+    return DocumentsEvaluation.fromCompatibilityMap(conv);
   }
 
   // ── Navigation
@@ -438,18 +449,24 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
       'rescueFire': _rffsModel.toCompatibilityMap(),
       'meteorological': _metModel.toCompatibilityMap(),
       'navigationalAids': _navaidsModel.toCompatibilityMap(),
-      'atc': _operationalEvaluation,
+      'atc': _operationalEvaluation.toCompatibilityMap(),
       'security': _smsModel.toCompatibilityMap(),
-      'documentation': _documentsEvaluation,
+      'documentation': _documentsEvaluation.toCompatibilityMap(),
     };
     final totalScore = cubit.calculateTotalScore(allData);
     final decision = cubit.getOperationalDecision(totalScore);
     final reinspection = cubit.calculateReinspectionDate(totalScore);
 
+    final resolvedAerodromeName =
+        (_selectedAerodromeName != null &&
+            _selectedAerodromeName!.trim().isNotEmpty)
+        ? _selectedAerodromeName!.trim()
+        : _kDummyAerodromeName;
+
     final report = EvaluationReport(
       id: widget.evaluation?.id ?? const Uuid().v4(),
       aerodromeId: _selectedAerodromeId ?? '',
-      aerodromeName: _selectedAerodromeName ?? '',
+      aerodromeName: resolvedAerodromeName,
       managerId: _selectedManagerId ?? '',
       managerName: _selectedManagerName ?? '',
       headId: _selectedHeadId ?? '',
@@ -473,9 +490,9 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
       rffsEvaluation: _rffsModel.toCompatibilityMap(),
       metEvaluation: _metModel.toCompatibilityMap(),
       navaidsEvaluation: _navaidsModel.toCompatibilityMap(),
-      operationalEvaluation: _operationalEvaluation,
+      operationalEvaluation: _operationalEvaluation.toCompatibilityMap(),
       smsEvaluation: _smsModel.toCompatibilityMap(),
-      documentsEvaluation: _documentsEvaluation,
+      documentsEvaluation: _documentsEvaluation.toCompatibilityMap(),
     );
     cubit.saveEvaluation(report);
 
@@ -813,13 +830,9 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
           ),
         ),
         _buildPage(
-          _buildEvaluationSection(
-            'العمليات التشغيلية',
-            _operationalItems,
-            _operationalEvaluation,
-            (k, v) => setState(() => _operationalEvaluation[k] = v),
-            Icons.control_point_outlined,
-            const Color(0xFF8E44AD),
+          OperationalSection(
+            evaluation: _operationalEvaluation,
+            onChanged: (u) => setState(() => _operationalEvaluation = u),
           ),
         ),
         _buildPage(
@@ -829,13 +842,9 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
           ),
         ),
         _buildPage(
-          _buildEvaluationSection(
-            'الوثائق',
-            _documentsItems,
-            _documentsEvaluation,
-            (k, v) => setState(() => _documentsEvaluation[k] = v),
-            Icons.folder_outlined,
-            const Color(0xFF2980B9),
+          DocumentsSection(
+            evaluation: _documentsEvaluation,
+            onChanged: (u) => setState(() => _documentsEvaluation = u),
           ),
         ),
         _buildPage(_buildSummaryContent()),
@@ -922,7 +931,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
         BlocListener<AerodromeCubit, AerodromeState>(
           listener: (_, s) {
             if (s is AerodromeLoaded)
-              setState(() => _aerodromes = s.aerodromes.cast());
+              setState(() => _aerodromes = s.allAerodromes.cast());
           },
         ),
         BlocListener<ManagerCubit, ManagerState>(
@@ -1188,61 +1197,6 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
   }
 
   // ══════════════════════════════════════════════════════════
-  // EVALUATION SECTION (Operational & Documents)
-  // ══════════════════════════════════════════════════════════
-  Widget _buildEvaluationSection(
-    String title,
-    List<String> items,
-    Map<String, dynamic> evaluation,
-    Function(String, Map<String, dynamic>) onChanged,
-    IconData icon,
-    Color accent,
-  ) {
-    // Compute section average
-    double avg = 0;
-    if (items.isNotEmpty) {
-      for (final item in items) {
-        final d = evaluation[item] as Map<String, dynamic>?;
-        avg += (d?['score'] as num?)?.toDouble() ?? 5.0;
-      }
-      avg /= items.length;
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Section Score Summary Card
-        _ScoreSummaryCard(score: avg, accent: accent),
-        const SizedBox(height: 16),
-
-        _SectionCard(
-          icon: icon,
-          title: title,
-          accent: accent,
-          children: items.map((item) {
-            final d = evaluation[item] as Map<String, dynamic>?;
-            final score = (d?['score'] as num?)?.toDouble() ?? 5.0;
-            final note = d?['note'] as String? ?? '';
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: _ProEvaluationSlider(
-                label: item,
-                value: score,
-                note: note,
-                accent: accent,
-                onChanged: (val) =>
-                    onChanged(item, {'score': val, 'note': note}),
-                onNoteChanged: (n) =>
-                    onChanged(item, {'score': score, 'note': n}),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  // ══════════════════════════════════════════════════════════
   // STEP 10 — SUMMARY
   // ══════════════════════════════════════════════════════════
   Widget _buildSummaryContent() {
@@ -1254,9 +1208,9 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
       'rescueFire': _rffsModel.toCompatibilityMap(),
       'meteorological': _metModel.toCompatibilityMap(),
       'navigationalAids': _navaidsModel.toCompatibilityMap(),
-      'atc': _operationalEvaluation,
+      'atc': _operationalEvaluation.toCompatibilityMap(),
       'security': _smsModel.toCompatibilityMap(),
-      'documentation': _documentsEvaluation,
+      'documentation': _documentsEvaluation.toCompatibilityMap(),
     };
     final totalScore = cubit.calculateTotalScore(allData);
     final decision = cubit.getOperationalDecision(totalScore);
@@ -1283,7 +1237,10 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
             _InfoRow(
               icon: Icons.flight_takeoff_outlined,
               label: 'المطار',
-              value: _selectedAerodromeName ?? '—',
+              value: (_selectedAerodromeName != null &&
+                      _selectedAerodromeName!.trim().isNotEmpty)
+                  ? _selectedAerodromeName!.trim()
+                  : _kDummyAerodromeName,
             ),
             _InfoRow(
               icon: Icons.manage_accounts_outlined,

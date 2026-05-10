@@ -215,7 +215,7 @@ class _EvaluationListScreenState extends State<EvaluationListScreen> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: scoreColor.withOpacity(0.1),
+                      color: scoreColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -319,7 +319,7 @@ class _EvaluationListScreenState extends State<EvaluationListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: chipColor.withOpacity(0.1),
+        color: chipColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -341,34 +341,11 @@ class _EvaluationListScreenState extends State<EvaluationListScreen> {
 
   Future<void> _exportPDF(EvaluationReport evaluation) async {
     try {
-      final reportData = {
-        'id': evaluation.id,
-        'aerodromeName': evaluation.aerodromeName,
-        'managerName': evaluation.managerName,
-        'headName': evaluation.headName,
-        'memberNames': evaluation.memberNames,
-        'evaluationDate': evaluation.evaluationDate,
-        'totalScore': evaluation.totalScore,
-        'operationalDecision': evaluation.operationalDecision,
-        'reinspectionDate': evaluation.reinspectionDate,
-        'runwayEvaluation': evaluation.runwayEvaluation,
-        'taxiwayEvaluation': evaluation.taxiwayEvaluation,
-        'apronEvaluation': evaluation.apronEvaluation,
-        'rffsEvaluation': evaluation.rffsEvaluation,
-        'metEvaluation': evaluation.metEvaluation,
-        'navaidsEvaluation': evaluation.navaidsEvaluation,
-        'operationalEvaluation': evaluation.operationalEvaluation,
-        'smsEvaluation': evaluation.smsEvaluation,
-        'documentsEvaluation': evaluation.documentsEvaluation,
-        'managerSignature': evaluation.managerSignature,
-        'headSignature': evaluation.headSignature,
-      };
-
-      final pdf = await PdfGenerator.generateEvaluationReport(reportData);
+      final pdf = await PdfGenerator.generateFromEvaluationReport(evaluation);
 
       await Printing.sharePdf(
         bytes: pdf,
-        filename: 'تقرير_تقييم_${evaluation.id}.pdf',
+        filename: PdfGenerator.suggestedExportFileName(evaluation),
       );
 
       if (mounted) {
