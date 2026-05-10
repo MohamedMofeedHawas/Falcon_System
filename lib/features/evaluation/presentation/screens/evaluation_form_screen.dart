@@ -1473,7 +1473,7 @@ class _ProDropdown<T> extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         DropdownButtonFormField<T>(
-          initialValue: validValue,
+          value: validValue,
           items: uniqueItems,
           onChanged: onChanged,
           hint: Text(

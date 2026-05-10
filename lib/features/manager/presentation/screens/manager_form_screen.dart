@@ -9,7 +9,10 @@ import 'package:falcon_system/core/widgets/section_header.dart';
 import 'package:falcon_system/core/widgets/signature_pad.dart';
 import 'package:falcon_system/data/models/airport_manager.dart';
 import 'package:falcon_system/features/manager/presentation/cubit/manager_cubit.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ManagerFormScreen extends StatefulWidget {
@@ -248,13 +251,19 @@ class _ManagerFormScreenState extends State<ManagerFormScreen> {
                     children: [
                       Text('توقيع المدير', style: AppFonts.labelMedium),
                       const SizedBox(height: 8),
-                      SignaturePad(
-                        onSignatureChanged: (signature) {
-                          setState(() {
-                            _signature = signature;
-                          });
-                        },
-                      ),
+                      if (_signature != null)
+                        SignatureDisplay(
+                          signatureData: _signature,
+                          onClear: () => setState(() => _signature = null),
+                        )
+                      else
+                        SignaturePad(
+                          onSignatureChanged: (signature) {
+                            setState(() {
+                              _signature = signature;
+                            });
+                          },
+                        ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -264,13 +273,19 @@ class _ManagerFormScreenState extends State<ManagerFormScreen> {
                     children: [
                       Text('الختم الرسمي', style: AppFonts.labelMedium),
                       const SizedBox(height: 8),
-                      SignaturePad(
-                        onSignatureChanged: (stamp) {
-                          setState(() {
-                            _officialStamp = stamp;
-                          });
-                        },
-                      ),
+                      if (_officialStamp != null)
+                        SignatureDisplay(
+                          signatureData: _officialStamp,
+                          onClear: () => setState(() => _officialStamp = null),
+                        )
+                      else
+                        SignaturePad(
+                          onSignatureChanged: (stamp) {
+                            setState(() {
+                              _officialStamp = stamp;
+                            });
+                          },
+                        ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -350,7 +365,10 @@ import 'package:falcon_system/core/widgets/signature_pad.dart';
 import 'package:falcon_system/data/models/airport_manager.dart';
 import 'package:falcon_system/features/manager/presentation/cubit/manager_cubit.dart';
 import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart' as p;
@@ -382,6 +400,8 @@ class _ManagerFormScreenState extends State<ManagerFormScreen>
   String? _cvPath;
   bool _nationalIdObscured = true;
   bool _isSaving = false;
+  bool _isUploadingCV = false;
+  double _uploadProgress = 0.0;
 
   // Animation Controllers
   late final AnimationController _headerAnimCtrl;
@@ -503,12 +523,69 @@ class _ManagerFormScreenState extends State<ManagerFormScreen>
   // ── CV Picker ─────────────────────────────────────────────────────────────
 
   Future<void> _pickCV() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc', 'docx'],
-    );
-    if (result != null && result.files.single.path != null) {
-      setState(() => _cvPath = result.files.single.path);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx'],
+        withData: kIsWeb, // Required for Web
+      );
+      
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.single;
+        
+        setState(() {
+          _isUploadingCV = true;
+          _uploadProgress = 0.0;
+          _cvPath = null;
+        });
+        
+        // Simulate upload progress
+        for (int i = 1; i <= 100; i += 4) {
+          await Future.delayed(const Duration(milliseconds: 30));
+          if (mounted) setState(() => _uploadProgress = i / 100.0);
+        }
+
+        if (kIsWeb) {
+          // On Web, we cannot use dart:io or local file system
+          // We will just use the file name as a mock path for the UI
+          if (mounted) {
+            setState(() {
+              _isUploadingCV = false;
+              _uploadProgress = 1.0;
+              _cvPath = file.name;
+            });
+          }
+        } else {
+          // Mobile/Desktop logic
+          final originalPath = file.path;
+          if (originalPath != null) {
+            final appDir = await getApplicationDocumentsDirectory();
+            final cvDir = Directory(p.join(appDir.path, 'cvs'));
+            if (!await cvDir.exists()) {
+              await cvDir.create(recursive: true);
+            }
+            
+            final fileName = p.basename(originalPath);
+            final savedPath = p.join(cvDir.path, '_');
+            
+            await File(originalPath).copy(savedPath);
+            
+            if (mounted) {
+              setState(() {
+                _isUploadingCV = false;
+                _uploadProgress = 1.0;
+                _cvPath = savedPath;
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isUploadingCV = false;
+        });
+      }
     }
   }
 
@@ -1231,7 +1308,55 @@ class _ManagerFormScreenState extends State<ManagerFormScreen>
             ),
           ),
           const SizedBox(height: 8),
-          GestureDetector(
+          if (_isUploadingCV)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF9B59B6).withOpacity(0.07),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF9B59B6).withOpacity(0.4), width: 1.5),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'جاري رفع السيرة الذاتية...',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF9B59B6),
+                        ),
+                      ),
+                      Text(
+                        '%${(_uploadProgress * 100).toInt()}',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF9B59B6),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: LinearProgressIndicator(
+                      value: _uploadProgress,
+                      backgroundColor: const Color(0xFF9B59B6).withOpacity(0.2),
+                      valueColor: const AlwaysStoppedAnimation<Color>(const Color(0xFF9B59B6)),
+                      minHeight: 8,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            GestureDetector(
             onTap: _pickCV,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
@@ -1339,9 +1464,15 @@ class _ManagerFormScreenState extends State<ManagerFormScreen>
             ),
           ),
           const SizedBox(height: 8),
-          SignaturePad(
-            onSignatureChanged: (sig) => setState(() => _signature = sig),
-          ),
+          if (_signature != null)
+            SignatureDisplay(
+              signatureData: _signature,
+              onClear: () => setState(() => _signature = null),
+            )
+          else
+            SignaturePad(
+              onSignatureChanged: (sig) => setState(() => _signature = sig),
+            ),
           const SizedBox(height: 8),
           Row(
             children: [
