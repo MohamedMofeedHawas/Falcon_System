@@ -425,7 +425,7 @@ class _AerodromeListScreenState extends State<AerodromeListScreen> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             itemCount: _filterTypes.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
               final type = _filterTypes[index];
               final isSelected = activeFilter == type;

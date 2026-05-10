@@ -7,6 +7,7 @@ part 'apron_element_score.g.dart';
 /// درجة تقييم عنصر واحد من عناصر ساحات الوقوف
 @HiveType(typeId: 13)
 class ApronElementScore extends HiveObject {
+  @override
   @HiveField(0)
   final String key;
 

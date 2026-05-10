@@ -7,6 +7,7 @@ part 'operational_element_score.g.dart';
 /// درجة تقييم عنصر واحد من عناصر الإجراءات التشغيلية
 @HiveType(typeId: 21)
 class OperationalElementScore extends HiveObject {
+  @override
   @HiveField(0)
   final String key;
 

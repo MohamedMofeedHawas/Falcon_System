@@ -7,6 +7,7 @@ part 'runway_element_score.g.dart';
 /// درجة تقييم عنصر واحد من عناصر تقييم المدرج
 @HiveType(typeId: 19)
 class RunwayElementScore extends HiveObject {
+  @override
   @HiveField(0)
   final String key;
 

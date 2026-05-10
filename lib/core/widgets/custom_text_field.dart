@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/src/services/text_formatter.dart';
 
 import '../constants/app_colors.dart';
 import '../constants/app_fonts.dart';
@@ -22,6 +23,7 @@ class CustomTextField extends StatelessWidget {
   final FocusNode? focusNode;
   final String? counterText;
   final bool isRequired;
+  
 
   const CustomTextField({
     super.key,
@@ -42,7 +44,8 @@ class CustomTextField extends StatelessWidget {
     this.onTap,
     this.focusNode,
     this.counterText,
-    this.isRequired = false,
+    this.isRequired = false, 
+   
   });
 
   @override

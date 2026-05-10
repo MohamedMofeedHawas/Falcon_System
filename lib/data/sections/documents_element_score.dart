@@ -7,6 +7,7 @@ part 'documents_element_score.g.dart';
 /// درجة تقييم عنصر واحد من عناصر الوثائق والتصاريح
 @HiveType(typeId: 23)
 class DocumentsElementScore extends HiveObject {
+  @override
   @HiveField(0)
   final String key;
 

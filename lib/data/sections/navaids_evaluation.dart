@@ -171,10 +171,11 @@ class NavaidsEvaluation extends HiveObject {
   }
 
   factory NavaidsEvaluation.fromCompatibilityMap(Map<String, dynamic> map) {
-    NavaidsElementScore _parse(String key, Map<String, bool> defaultSub) {
+    NavaidsElementScore parse(String key, Map<String, bool> defaultSub) {
       final raw = map[key];
-      if (raw == null)
+      if (raw == null) {
         return NavaidsElementScore(key: key, subCriteriaChecked: defaultSub);
+      }
       final m = raw as Map<String, dynamic>;
       final subRaw = m['subCriteria'] as Map? ?? {};
       return NavaidsElementScore(
@@ -189,36 +190,36 @@ class NavaidsEvaluation extends HiveObject {
 
     return NavaidsEvaluation(
       hasILS: (map['has_ils'] as bool?) ?? true,
-      papiVasi: _parse('papi_vasi', {
+      papiVasi: parse('papi_vasi', {
         'unit_count_4': false,
         'glide_angle_correct': false,
         'visible_day_night': false,
         'no_obstacles_5miles': false,
       }),
-      vor: _parse('vor', {
+      vor: parse('vor', {
         'coverage_25nm': false,
         'no_interference': false,
         'flight_inspection_18m': false,
         'dme_collocated': false,
       }),
-      dme: _parse('dme', {
+      dme: parse('dme', {
         'accuracy_0_1nm': false,
         'no_query_dropout': false,
         'backup_device': false,
       }),
-      ils: _parse('ils', {
+      ils: parse('ils', {
         'llz_on_centerline': false,
         'gp_3_degrees': false,
         'markers_working': false,
         'signal_stable_fi_match': false,
         'rnav_backup': false,
       }),
-      atisVolmet: _parse('atis_volmet', {
+      atisVolmet: parse('atis_volmet', {
         'atis_updated_metar': false,
         'd_atis_digital': false,
         'volmet_if_international': false,
       }),
-      flightInspection: _parse('flight_inspection', {
+      flightInspection: parse('flight_inspection', {
         'schedule_all_navaids': false,
         'tolerances_met': false,
         'authority_approved_reports': false,

@@ -14,7 +14,10 @@ class EvaluationCubit extends Cubit<EvaluationState> {
   Future<void> loadEvaluations() async {
     emit(EvaluationLoading());
     try {
-      final evaluations = _evaluationBox.values.toList();
+      final evaluations = _evaluationBox.toMap().entries
+          .where((entry) => HiveService.isOwnedByCurrentAdmin(entry.key))
+          .map((entry) => entry.value)
+          .toList();
       emit(EvaluationLoaded(evaluations: evaluations));
     } catch (e) {
       emit(EvaluationError(message: e.toString()));
@@ -24,8 +27,11 @@ class EvaluationCubit extends Cubit<EvaluationState> {
   Future<void> saveEvaluation(EvaluationReport evaluation) async {
     emit(EvaluationLoading());
     try {
-      await _evaluationBox.put(evaluation.id, evaluation);
-      final evaluations = _evaluationBox.values.toList();
+      await _evaluationBox.put(HiveService.scopedKey(evaluation.id), evaluation);
+      final evaluations = _evaluationBox.toMap().entries
+          .where((entry) => HiveService.isOwnedByCurrentAdmin(entry.key))
+          .map((entry) => entry.value)
+          .toList();
       emit(EvaluationLoaded(evaluations: evaluations));
     } catch (e) {
       emit(EvaluationError(message: e.toString()));
@@ -35,15 +41,19 @@ class EvaluationCubit extends Cubit<EvaluationState> {
   Future<void> deleteEvaluation(String id) async {
     emit(EvaluationLoading());
     try {
-      await _evaluationBox.delete(id);
-      final evaluations = _evaluationBox.values.toList();
+      await _evaluationBox.delete(HiveService.scopedKey(id));
+      final evaluations = _evaluationBox.toMap().entries
+          .where((entry) => HiveService.isOwnedByCurrentAdmin(entry.key))
+          .map((entry) => entry.value)
+          .toList();
       emit(EvaluationLoaded(evaluations: evaluations));
     } catch (e) {
       emit(EvaluationError(message: e.toString()));
     }
   }
 
-  EvaluationReport? getEvaluationById(String id) => _evaluationBox.get(id);
+  EvaluationReport? getEvaluationById(String id) =>
+      _evaluationBox.get(HiveService.scopedKey(id));
 
   List<dynamic> searchEvaluations(String query) {
     if (state is EvaluationLoaded) {

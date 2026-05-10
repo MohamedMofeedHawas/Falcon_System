@@ -25,13 +25,15 @@ class InspectionHeadAdapter extends TypeAdapter<InspectionHead> {
       notes: fields[5] as String?,
       createdAt: fields[6] as DateTime?,
       updatedAt: fields[7] as DateTime?,
+      phoneNumbers: (fields[8] as List?)?.cast<String>(),
+      cvPath: fields[9] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, InspectionHead obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -47,7 +49,11 @@ class InspectionHeadAdapter extends TypeAdapter<InspectionHead> {
       ..writeByte(6)
       ..write(obj.createdAt)
       ..writeByte(7)
-      ..write(obj.updatedAt);
+      ..write(obj.updatedAt)
+      ..writeByte(8)
+      ..write(obj.phoneNumbers)
+      ..writeByte(9)
+      ..write(obj.cvPath);
   }
 
   @override

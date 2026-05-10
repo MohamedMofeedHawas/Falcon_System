@@ -15,14 +15,15 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailCtrl = TextEditingController();
+  final _emailOrMilitaryCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
+  bool _loginWithMilitaryId = false;
 
   @override
   void dispose() {
-    _emailCtrl.dispose();
+    _emailOrMilitaryCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
   }
@@ -33,15 +34,18 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await HiveService.init();
 
-      final email = _emailCtrl.text.trim().toLowerCase();
+      final identifier = _emailOrMilitaryCtrl.text.trim();
       final password = _passwordCtrl.text;
 
-      // ✅ Search by email → supports multiple admins
-      final admin = HiveService.getAdminByEmail(email);
+      final admin = _loginWithMilitaryId
+          ? HiveService.getAdminByNationalId(identifier)
+          : HiveService.getAdminByEmail(identifier.toLowerCase());
 
       if (admin == null) {
         _snack(
-          'لا يوجد حساب مرتبط بهذا البريد الإلكتروني',
+          _loginWithMilitaryId
+              ? 'لا يوجد حساب مرتبط بهذا الرقم العسكري'
+              : 'لا يوجد حساب مرتبط بهذا البريد الإلكتروني',
           AppColors.danger,
           icon: Icons.error_outline,
         );
@@ -49,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (password == (admin.password ?? '')) {
-        HiveService.setCurrentAdminEmail(email); // track current admin
+        HiveService.setCurrentAdminEmail(admin.email); // track current admin
         _snack(
           AppStrings.loginSuccess,
           AppColors.success,
@@ -168,32 +172,148 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 36),
-                CustomTextField(
-                  label: AppStrings.email,
-                  controller: _emailCtrl,
-                  prefixIcon: const Icon(Icons.alternate_email),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'الرجاء إدخال البريد الإلكتروني'
-                      : null,
+               CustomTextField(
+                  label: _loginWithMilitaryId
+                      ? 'الرقم العسكري'
+                      : AppStrings.email,
+
+                  controller: _emailOrMilitaryCtrl,
+
+                  prefixIcon: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    child: Icon(
+                      _loginWithMilitaryId
+                          ? Icons.badge_outlined
+                          : Icons.alternate_email,
+                      key: ValueKey(_loginWithMilitaryId),
+                    ),
+                  ),
+
+                  keyboardType: _loginWithMilitaryId
+                      ? TextInputType.number
+                      : TextInputType.emailAddress,
+
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return _loginWithMilitaryId
+                          ? 'الرجاء إدخال الرقم العسكري'
+                          : 'الرجاء إدخال البريد الإلكتروني';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                /// PASSWORD FIELD
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+
+                  child: _loginWithMilitaryId
+                      ? const SizedBox.shrink()
+                      : Column(
+                          key: const ValueKey('password'),
+
+                          children: [
+                            CustomTextField(
+                              label: AppStrings.password,
+                              controller: _passwordCtrl,
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              obscureText: _obscure,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscure
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: AppColors.textHint,
+                                ),
+                                onPressed: () =>
+                                    setState(() => _obscure = !_obscure),
+                              ),
+                              validator: (v) => (v == null || v.isEmpty)
+                                  ? 'الرجاء إدخال كلمة المرور'
+                                  : null,
+                            ),
+                          ],
+                        ),
+                ),
+                const SizedBox(height: 28),
+
+                /// MODERN SWITCH
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+
+                  child: SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+
+                    secondary: AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+
+                      padding: const EdgeInsets.all(8),
+
+                      decoration: BoxDecoration(
+                        color: _loginWithMilitaryId
+                            ? Colors.blue.withOpacity(.12)
+                            : Colors.grey.withOpacity(.08),
+
+                        shape: BoxShape.circle,
+                      ),
+
+                      child: Icon(
+                        _loginWithMilitaryId
+                            ? Icons.shield_outlined
+                            : Icons.email_outlined,
+
+                        color: _loginWithMilitaryId
+                            ? Colors.blue
+                            : Colors.grey.shade700,
+                      ),
+                    ),
+
+                    title: const Text(
+                      'تسجيل الدخول بالرقم العسكري',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+
+                    subtitle: Text(
+                    
+                           'سيتم تسجيل الدخول باستخدام الرقم العسكري',
+                        
+
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+
+                    activeColor: Colors.blue,
+
+                    value: _loginWithMilitaryId,
+
+                    onChanged: (v) {
+                      setState(() {
+                        _loginWithMilitaryId = v;
+
+                        _emailOrMilitaryCtrl.clear();
+
+                        if (v) {
+                          _passwordCtrl.clear();
+                        }
+                      });
+                    },
+                  ),
                 ),
                 const SizedBox(height: 14),
-                CustomTextField(
-                  label: AppStrings.password,
-                  controller: _passwordCtrl,
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  obscureText: _obscure,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscure ? Icons.visibility_off : Icons.visibility,
-                      color: AppColors.textHint,
-                    ),
-                    onPressed: () => setState(() => _obscure = !_obscure),
-                  ),
-                  validator: (v) => (v == null || v.isEmpty)
-                      ? 'الرجاء إدخال كلمة المرور'
-                      : null,
-                ),
+              
                 const SizedBox(height: 28),
                 SizedBox(
                   width: 200,
@@ -275,12 +395,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ],
-                ),
-              ],
-            ),
+                
+              
+            ),]
           ),
         ),
       ),
-    );
+    ));
   }
 }

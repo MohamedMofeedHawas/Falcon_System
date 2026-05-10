@@ -166,7 +166,7 @@ class _IlsToggle extends StatelessWidget {
           Switch(
             value: hasILS,
             onChanged: onChanged,
-            activeColor: const Color(0xFF1565C0),
+            activeThumbColor: const Color(0xFF1565C0),
           ),
         ],
       ),

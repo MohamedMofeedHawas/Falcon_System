@@ -106,10 +106,11 @@ class DocumentsEvaluation extends HiveObject {
   }
 
   factory DocumentsEvaluation.fromCompatibilityMap(Map<String, dynamic> map) {
-    DocumentsElementScore _parse(String key, Map<String, bool> defaultSub) {
+    DocumentsElementScore parse(String key, Map<String, bool> defaultSub) {
       final raw = map[key];
-      if (raw == null)
+      if (raw == null) {
         return DocumentsElementScore(key: key, subCriteriaChecked: defaultSub);
+      }
       final m = raw as Map<String, dynamic>;
       final subRaw = m['subCriteria'] as Map? ?? {};
       return DocumentsElementScore(
@@ -123,19 +124,19 @@ class DocumentsEvaluation extends HiveObject {
     }
 
     return DocumentsEvaluation(
-      aerodromeManual: _parse('aerodrome_manual', {
+      aerodromeManual: parse('aerodrome_manual', {
         'annex14_compliant': false,
         'all_sections_covered': false,
         'updated_maps_drawings': false,
         'normal_emergency_procedures': false,
       }),
-      regularUpdates: _parse('regular_updates', {
+      regularUpdates: parse('regular_updates', {
         'annual_full_review': false,
         'partial_updates_on_change': false,
         'amendment_log': false,
         'authority_approval': false,
       }),
-      licensesValidity: _parse('licenses_validity', {
+      licensesValidity: parse('licenses_validity', {
         'aerodrome_certificate_valid': false,
         'annual_permits_rffs_vehicles': false,
         'navaids_met_calibration': false,

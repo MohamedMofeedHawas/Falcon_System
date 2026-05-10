@@ -6,6 +6,7 @@ part 'taxiway_element_score.g.dart';
 @HiveType(typeId: 7)
 class TaxiwayElementScore extends HiveObject {
   /// مفتاح العنصر (ثابت للبرمجة)
+  @override
   @HiveField(0)
   final String key;
 

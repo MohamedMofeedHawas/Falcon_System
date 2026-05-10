@@ -178,7 +178,7 @@ class RffsEvaluation extends HiveObject {
   }
 
   factory RffsEvaluation.fromCompatibilityMap(Map<String, dynamic> map) {
-    RffsElementScore _parse(String key, Map<String, bool> defaultSub) {
+    RffsElementScore parse(String key, Map<String, bool> defaultSub) {
       final raw = map[key];
       if (raw == null) {
         return RffsElementScore(key: key, subCriteriaChecked: defaultSub);
@@ -196,44 +196,44 @@ class RffsEvaluation extends HiveObject {
     }
 
     return RffsEvaluation(
-      icaoCategory: _parse('icao_category', {
+      icaoCategory: parse('icao_category', {
         'declared_category_matches': false,
         'civil_authority_doc': false,
         'periodic_review': false,
       }),
-      fireVehicles: _parse('fire_vehicles', {
+      fireVehicles: parse('fire_vehicles', {
         'vehicle_count_per_category': false,
         'discharge_rate_adequate': false,
         'response_3min': false,
         'daily_operational_check': false,
         'foam_proportioning_system': false,
       }),
-      extinguishingAgents: _parse('extinguishing_agents', {
+      extinguishingAgents: parse('extinguishing_agents', {
         'water_volume_per_category': false,
         'afff_quantity': false,
         'agents_within_expiry': false,
         'dry_chemical_powder': false,
       }),
-      crewReadiness: _parse('crew_readiness', {
+      crewReadiness: parse('crew_readiness', {
         'minimum_manning_per_shift': false,
         'icao_doc9137_certificates': false,
         'annual_fitness_test': false,
         'airport_layout_knowledge': false,
         'weekly_live_fire_drill': false,
       }),
-      responseTime: _parse('response_time', {
+      responseTime: parse('response_time', {
         'cat6_below_2min': false,
         'cat7_above_3min_midpoint': false,
         'gps_documented': false,
         'alert_under_45sec': false,
       }),
-      communicationSystem: _parse('communication_system', {
+      communicationSystem: parse('communication_system', {
         'tower_radio_coordinated': false,
         'backup_channels': false,
         'daily_comm_test': false,
         'full_airport_coverage': false,
       }),
-      trainingCoordination: _parse('training_coordination', {
+      trainingCoordination: parse('training_coordination', {
         'emergency_plan_updated': false,
         'joint_drill_every_3months': false,
         'ambulance_hospital_coordination': false,

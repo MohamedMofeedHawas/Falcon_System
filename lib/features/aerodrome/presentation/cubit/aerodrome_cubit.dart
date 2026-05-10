@@ -101,7 +101,7 @@ class AerodromeCubit extends Cubit<AerodromeState> {
     emit(AerodromeLoading());
     try {
       // ── Seed بيانات مطارات مصر عند أول تشغيل ─────────────────────────
-      if (_box.isEmpty) {
+      if (_ownedAerodromes().isEmpty) {
         await _seedEgyptianAerodromes();
       }
 
@@ -118,7 +118,7 @@ class AerodromeCubit extends Cubit<AerodromeState> {
   Future<void> addAerodrome(Aerodrome aerodrome) async {
     emit(AerodromeLoading());
     try {
-      await _box.put(aerodrome.id, aerodrome);
+      await _box.put(HiveService.scopedKey(aerodrome.id), aerodrome);
       _emitFiltered();
     } catch (e) {
       emit(AerodromeError(message: 'فشل إضافة المطار: $e'));
@@ -128,7 +128,7 @@ class AerodromeCubit extends Cubit<AerodromeState> {
   Future<void> updateAerodrome(Aerodrome aerodrome) async {
     emit(AerodromeLoading());
     try {
-      await _box.put(aerodrome.id, aerodrome);
+      await _box.put(HiveService.scopedKey(aerodrome.id), aerodrome);
       _emitFiltered();
     } catch (e) {
       emit(AerodromeError(message: 'فشل تعديل بيانات المطار: $e'));
@@ -138,14 +138,14 @@ class AerodromeCubit extends Cubit<AerodromeState> {
   Future<void> deleteAerodrome(String id) async {
     emit(AerodromeLoading());
     try {
-      await _box.delete(id);
+      await _box.delete(HiveService.scopedKey(id));
       _emitFiltered();
     } catch (e) {
       emit(AerodromeError(message: 'فشل حذف المطار: $e'));
     }
   }
 
-  Aerodrome? getAerodromeById(String id) => _box.get(id);
+  Aerodrome? getAerodromeById(String id) => _box.get(HiveService.scopedKey(id));
 
   // ══════════════════════════════════════════════════════════════════════
   // FILTER  (تصفية حسب نوع المطار)
@@ -178,7 +178,7 @@ class AerodromeCubit extends Cubit<AerodromeState> {
   // ══════════════════════════════════════════════════════════════════════
 
   Map<String, int> getTypeCounts() {
-    final all = _box.values.toList();
+    final all = _ownedAerodromes();
     final Map<String, int> counts = {};
     for (final a in all) {
       counts[a.airportType] = (counts[a.airportType] ?? 0) + 1;
@@ -191,7 +191,7 @@ class AerodromeCubit extends Cubit<AerodromeState> {
   // ══════════════════════════════════════════════════════════════════════
 
   void _emitFiltered() {
-    final all = _box.values.toList();
+    final all = _ownedAerodromes();
     final filtered = _activeFilter == null
         ? all
         : all.where((a) => a.airportType == _activeFilter).toList();
@@ -207,7 +207,14 @@ class AerodromeCubit extends Cubit<AerodromeState> {
 
   Future<void> _seedEgyptianAerodromes() async {
     for (final aerodrome in AerodromeSeed.egyptianAerodromes) {
-      await _box.put(aerodrome.id, aerodrome);
+      await _box.put(HiveService.scopedKey(aerodrome.id), aerodrome);
     }
+  }
+
+  List<Aerodrome> _ownedAerodromes() {
+    return _box.toMap().entries
+        .where((entry) => HiveService.isOwnedByCurrentAdmin(entry.key))
+        .map((entry) => entry.value)
+        .toList();
   }
 }

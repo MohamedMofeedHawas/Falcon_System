@@ -27,15 +27,24 @@ class InspectionMember extends HiveObject {
   @HiveField(6)
   DateTime updatedAt;
 
+  @HiveField(7)
+  List<String> phoneNumbers;
+
+  @HiveField(8)
+  String? cvPath;
+
   InspectionMember({
     required this.id,
     required this.fullName,
     required this.specialization,
     this.rank,
     this.notes,
+    List<String>? phoneNumbers,
+    this.cvPath,
     DateTime? createdAt,
     DateTime? updatedAt,
-  }) : createdAt = createdAt ?? DateTime.now(),
+  }) : phoneNumbers = phoneNumbers ?? [],
+       createdAt = createdAt ?? DateTime.now(),
        updatedAt = updatedAt ?? DateTime.now();
 
   InspectionMember copyWith({
@@ -44,6 +53,8 @@ class InspectionMember extends HiveObject {
     String? specialization,
     String? rank,
     String? notes,
+    List<String>? phoneNumbers,
+    String? cvPath,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -53,6 +64,8 @@ class InspectionMember extends HiveObject {
       specialization: specialization ?? this.specialization,
       rank: rank ?? this.rank,
       notes: notes ?? this.notes,
+      phoneNumbers: phoneNumbers ?? List.from(this.phoneNumbers),
+      cvPath: cvPath ?? this.cvPath,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -65,6 +78,8 @@ class InspectionMember extends HiveObject {
       'specialization': specialization,
       'rank': rank,
       'notes': notes,
+      'phoneNumbers': phoneNumbers,
+      'cvPath': cvPath,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -77,6 +92,12 @@ class InspectionMember extends HiveObject {
       specialization: json['specialization'] as String,
       rank: json['rank'] as String?,
       notes: json['notes'] as String?,
+      phoneNumbers:
+          (json['phoneNumbers'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      cvPath: json['cvPath'] as String?,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
           : DateTime.now(),

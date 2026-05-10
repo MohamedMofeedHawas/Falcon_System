@@ -7,6 +7,7 @@ part 'sms_element_score.g.dart';
 /// درجة تقييم عنصر واحد من عناصر نظام إدارة السلامة
 @HiveType(typeId: 15)
 class SmsElementScore extends HiveObject {
+  @override
   @HiveField(0)
   final String key;
 

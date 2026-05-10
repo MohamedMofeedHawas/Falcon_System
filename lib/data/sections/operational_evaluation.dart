@@ -167,13 +167,14 @@ class OperationalEvaluation extends HiveObject {
   }
 
   factory OperationalEvaluation.fromCompatibilityMap(Map<String, dynamic> map) {
-    OperationalElementScore _parse(String key, Map<String, bool> defaultSub) {
+    OperationalElementScore parse(String key, Map<String, bool> defaultSub) {
       final raw = map[key];
-      if (raw == null)
+      if (raw == null) {
         return OperationalElementScore(
           key: key,
           subCriteriaChecked: defaultSub,
         );
+      }
       final m = raw as Map<String, dynamic>;
       final subRaw = m['subCriteria'] as Map? ?? {};
       return OperationalElementScore(
@@ -187,41 +188,41 @@ class OperationalEvaluation extends HiveObject {
     }
 
     return OperationalEvaluation(
-      groundMovement: _parse('ground_movement', {
+      groundMovement: parse('ground_movement', {
         'approved_document': false,
         'vehicle_aircraft_maps': false,
         'peak_congestion_procedures': false,
         'towing_procedures': false,
         'tower_coordination': false,
       }),
-      aircraftMovement: _parse('aircraft_movement', {
+      aircraftMovement: parse('aircraft_movement', {
         'parking_separation': false,
         'ground_control_radio': false,
         'holding_points': false,
         'night_low_visibility': false,
       }),
-      vehicleMovement: _parse('vehicle_movement', {
+      vehicleMovement: parse('vehicle_movement', {
         'valid_driving_permits': false,
         'zone_speed_limits': false,
         'warning_lights_radio': false,
         'no_phone_in_movement_areas': false,
         'periodic_vehicle_inspection': false,
       }),
-      emergencyPlan: _parse('emergency_plan', {
+      emergencyPlan: parse('emergency_plan', {
         'updated_within_12_months': false,
         'roles_defined': false,
         'quick_access_maps': false,
         'incident_commander': false,
         'evacuation_procedure': false,
       }),
-      periodicDrills: _parse('periodic_drills', {
+      periodicDrills: parse('periodic_drills', {
         'full_scale_biennial': false,
         'tabletop_biannual': false,
         'drill_report_recorded': false,
         'recommendations_applied': false,
         'all_parties_participated': false,
       }),
-      wildlifeManagement: _parse('wildlife_management', {
+      wildlifeManagement: parse('wildlife_management', {
         'written_approved_program': false,
         'monthly_survey': false,
         'deterrent_methods': false,

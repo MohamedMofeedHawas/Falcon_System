@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:falcon_system/core/constants/app_colors.dart';
@@ -186,8 +186,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _recalcLicense() {
     if (_profile?.licenseIssueDate == null ||
-        _profile?.licenseExpiryDate == null)
+        _profile?.licenseExpiryDate == null) {
       return;
+    }
     final now = DateTime.now();
     _licenseTotal = _calcDuration(
       _profile!.licenseIssueDate!,
@@ -1049,8 +1050,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     firstDate: DateTime(1940),
                                     lastDate: DateTime.now(),
                                   );
-                                  if (d != null)
+                                  if (d != null) {
                                     setState(() => _dateOfBirth = d);
+                                  }
                                 },
                               ),
                             ),
@@ -1367,7 +1369,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           value: _hasLicense,
                           onChanged: (v) => setState(() => _hasLicense = v),
                           title: Text(AppStrings.haveLicense),
-                          activeColor: AppColors.primary,
+                          activeThumbColor: AppColors.primary,
                           tileColor: AppColors.background,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),

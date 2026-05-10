@@ -7,6 +7,7 @@ part 'navaids_element_score.g.dart';
 /// درجة تقييم عنصر واحد من عناصر المساعدات الملاحية
 @HiveType(typeId: 17)
 class NavaidsElementScore extends HiveObject {
+  @override
   @HiveField(0)
   final String key;
 

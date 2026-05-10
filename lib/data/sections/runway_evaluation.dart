@@ -269,10 +269,11 @@ class RunwayEvaluation extends HiveObject {
   }
 
   factory RunwayEvaluation.fromCompatibilityMap(Map<String, dynamic> map) {
-    RunwayElementScore _parse(String key, Map<String, bool> def) {
+    RunwayElementScore parse(String key, Map<String, bool> def) {
       final raw = map[key];
-      if (raw == null)
+      if (raw == null) {
         return RunwayElementScore(key: key, subCriteriaChecked: def);
+      }
       final m = raw as Map<String, dynamic>;
       final sub = m['subCriteria'] as Map? ?? {};
       return RunwayElementScore(
@@ -286,30 +287,30 @@ class RunwayEvaluation extends HiveObject {
     }
 
     return RunwayEvaluation(
-      runwayLength: _parse('runway_length', {
+      runwayLength: parse('runway_length', {
         'code_number_letter': false,
         'toda_adequate': false,
         'lda_adequate': false,
       }),
-      runwayWidth: _parse('runway_width', {
+      runwayWidth: parse('runway_width', {
         'width_meets_standard': false,
         'shoulders_present': false,
         'lateral_strips_present': false,
       }),
-      surfaceCondition: _parse('surface_condition', {
+      surfaceCondition: parse('surface_condition', {
         'no_cracks': false,
         'no_fluid_pooling': false,
         'no_spalling': false,
         'no_rubber_buildup': false,
         'friction_coeff_ok': false,
       }),
-      resa: _parse('resa', {
+      resa: parse('resa', {
         'length_240m': false,
         'width_adequate': false,
         'no_obstacles': false,
         'surface_can_stop_ac': false,
       }),
-      markings: _parse('markings', {
+      markings: parse('markings', {
         'runway_numbers_clear': false,
         'centerline_clear': false,
         'edge_lines_clear': false,
@@ -317,7 +318,7 @@ class RunwayEvaluation extends HiveObject {
         'aiming_point_clear': false,
         'holding_position_clear': false,
       }),
-      lighting: _parse('lighting', {
+      lighting: parse('lighting', {
         'edge_lights_working': false,
         'threshold_end_lights': false,
         'centerline_lights': false,
@@ -325,34 +326,34 @@ class RunwayEvaluation extends HiveObject {
         'touchdown_zone_lights': false,
         'dimming_control': false,
       }),
-      ofz: _parse('ofz', {
+      ofz: parse('ofz', {
         'no_vegetation_rocks_animals': false,
         'wingtip_clearance_ok': false,
         'bird_hazard_report': false,
       }),
-      pcn: _parse('pcn', {
+      pcn: parse('pcn', {
         'pcn_matches_acn': false,
         'no_settlements': false,
         'structural_records': false,
       }),
-      drainage: _parse('drainage', {
+      drainage: parse('drainage', {
         'cross_slope_1_1_5': false,
         'longitudinal_slope_ok': false,
         'catch_basins_clear': false,
         'no_water_pooling': false,
       }),
-      signs: _parse('signs', {
+      signs: parse('signs', {
         'designation_signs': false,
         'exit_signs': false,
         'distance_remaining': false,
         'sign_illumination': false,
       }),
-      fuelDrainage: _parse('fuel_drainage', {
+      fuelDrainage: parse('fuel_drainage', {
         'pipes_pumps_ok': false,
         'no_leaks': false,
         'safe_zone_compatible': false,
       }),
-      edgesShoulders: _parse('edges_shoulders', {
+      edgesShoulders: parse('edges_shoulders', {
         'no_blast_erosion': false,
         'shoulder_flush_max_3cm': false,
         'fod_free': false,

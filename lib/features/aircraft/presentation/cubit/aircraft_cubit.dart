@@ -15,7 +15,11 @@ class AircraftCubit extends Cubit<AircraftState> {
   Future<void> loadAircraft() async {
     emit(AircraftLoading());
     try {
-      final aircraft = HiveService.aircraftBox.values.cast<Aircraft>().toList();
+      final aircraft = HiveService.aircraftBox.toMap().entries
+          .where((entry) => HiveService.isOwnedByCurrentAdmin(entry.key))
+          .map((entry) => entry.value)
+          .cast<Aircraft>()
+          .toList();
       emit(AircraftLoaded(aircraft));
     } catch (e) {
       emit(AircraftError(e.toString()));
@@ -27,7 +31,10 @@ class AircraftCubit extends Cubit<AircraftState> {
     try {
       aircraft.id = _uuid.v4();
       aircraft.createdAt = DateTime.now();
-      await HiveService.aircraftBox.put(aircraft.id, aircraft);
+      await HiveService.aircraftBox.put(
+        HiveService.scopedKey(aircraft.id),
+        aircraft,
+      );
       await loadAircraft();
     } catch (e) {
       emit(AircraftError(e.toString()));
@@ -38,7 +45,10 @@ class AircraftCubit extends Cubit<AircraftState> {
     emit(AircraftLoading());
     try {
       aircraft.updatedAt = DateTime.now();
-      await HiveService.aircraftBox.put(aircraft.id, aircraft);
+      await HiveService.aircraftBox.put(
+        HiveService.scopedKey(aircraft.id),
+        aircraft,
+      );
       await loadAircraft();
     } catch (e) {
       emit(AircraftError(e.toString()));
@@ -48,7 +58,7 @@ class AircraftCubit extends Cubit<AircraftState> {
   Future<void> deleteAircraft(String id) async {
     emit(AircraftLoading());
     try {
-      await HiveService.aircraftBox.delete(id);
+      await HiveService.aircraftBox.delete(HiveService.scopedKey(id));
       await loadAircraft();
     } catch (e) {
       emit(AircraftError(e.toString()));
@@ -72,6 +82,6 @@ class AircraftCubit extends Cubit<AircraftState> {
   }
 
   Aircraft? getAircraftById(String id) {
-    return HiveService.aircraftBox.get(id);
+    return HiveService.aircraftBox.get(HiveService.scopedKey(id));
   }
 }

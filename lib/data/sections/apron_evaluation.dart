@@ -196,7 +196,7 @@ class ApronEvaluation extends HiveObject {
   }
 
   factory ApronEvaluation.fromCompatibilityMap(Map<String, dynamic> map) {
-    ApronElementScore _parse(String key, Map<String, bool> defaultSub) {
+    ApronElementScore parse(String key, Map<String, bool> defaultSub) {
       final raw = map[key];
       if (raw == null) {
         return ApronElementScore(key: key, subCriteriaChecked: defaultSub);
@@ -214,49 +214,49 @@ class ApronEvaluation extends HiveObject {
     }
 
     return ApronEvaluation(
-      parkingStands: _parse('parking_stands', {
+      parkingStands: parse('parking_stands', {
         'stand_lines_clear': false,
         'stand_numbers_visible': false,
         'wingtip_fuselage_clearance': false,
         'entry_exit_no_reverse': false,
       }),
-      vehicleMovement: _parse('vehicle_movement', {
+      vehicleMovement: parse('vehicle_movement', {
         'service_lanes_parallel': false,
         'safe_crossing_behind_ac': false,
         'apron_control_present': false,
         'speed_limits_stop_zones': false,
       }),
-      guidanceSystems: _parse('guidance_systems', {
+      guidanceSystems: parse('guidance_systems', {
         'agnis_installed': false,
         'vdgs_installed': false,
         'stop_position_markers': false,
         'lead_in_centerline': false,
         'night_stand_lighting': false,
       }),
-      floodLighting: _parse('flood_lighting', {
+      floodLighting: parse('flood_lighting', {
         'full_coverage_no_shadows': false,
         'lux_20_remote_50_main': false,
         'non_frangible_towers': false,
       }),
-      surfaceCondition: _parse('surface_condition', {
+      surfaceCondition: parse('surface_condition', {
         'no_depressions_nosegear': false,
         'no_oil_fuel_stains': false,
         'no_cracks_disintegration': false,
         'anti_skid_wet': false,
         'fod_free': false,
       }),
-      supportFacilities: _parse('support_facilities', {
+      supportFacilities: parse('support_facilities', {
         'gpu_good_condition': false,
         'ground_ac_available': false,
         'fuel_pipes_or_tanker_safe': false,
         'fire_extinguishers_sand': false,
       }),
-      waterDrainage: _parse('water_drainage', {
+      waterDrainage: parse('water_drainage', {
         'no_large_puddles': false,
         'unblocked_drains': false,
         'drainage_away_from_stands': false,
       }),
-      conflictPoints: _parse('conflict_points', {
+      conflictPoints: parse('conflict_points', {
         'inbound_outbound_separated': false,
         'conflict_points_marked': false,
         'lights_or_guards_at_nodes': false,

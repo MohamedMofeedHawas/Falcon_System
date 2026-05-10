@@ -1,4 +1,4 @@
-part of 'manager_cubit.dart';
+/*part of 'manager_cubit.dart';
 
 abstract class ManagerState {}
 
@@ -15,5 +15,27 @@ class ManagerLoaded extends ManagerState {
 class ManagerError extends ManagerState {
   final String message;
 
+  ManagerError(this.message);
+}*/
+part of 'manager_cubit.dart';
+
+abstract class ManagerState {}
+
+class ManagerInitial extends ManagerState {}
+
+class ManagerLoading extends ManagerState {}
+
+class ManagerLoaded extends ManagerState {
+  final List<AirportManager> managers;
+  ManagerLoaded(this.managers);
+}
+
+class ManagerSuccess extends ManagerState {
+  final String message;
+  ManagerSuccess(this.message);
+}
+
+class ManagerError extends ManagerState {
+  final String message;
   ManagerError(this.message);
 }

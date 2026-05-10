@@ -7,6 +7,7 @@ part 'rffs_element_score.g.dart';
 /// درجة تقييم عنصر واحد من عناصر خدمات الإطفاء والإنقاذ
 @HiveType(typeId: 11)
 class RffsElementScore extends HiveObject {
+  @override
   @HiveField(0)
   final String key;
 

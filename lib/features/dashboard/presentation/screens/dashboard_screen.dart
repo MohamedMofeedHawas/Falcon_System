@@ -29,24 +29,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final isCompact = width < 1000;
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
+        drawer: isCompact ? Drawer(child: _buildSidebar(isCompact: true)) : null,
         body: Row(
           children: [
-            // Sidebar
-            _buildSidebar(),
-            // Main Content
-            Expanded(child: _buildMainContent()),
+            if (!isCompact) _buildSidebar(isCompact: false),
+            Expanded(child: _buildMainContent(isCompact: isCompact)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSidebar() {
+  Widget _buildSidebar({required bool isCompact}) {
+    final expanded = isCompact ? true : _isSidebarExpanded;
     return Container(
-      width: _isSidebarExpanded ? 250 : 80,
+      width: isCompact ? double.infinity : (expanded ? 250 : 80),
       decoration: BoxDecoration(
         color: AppColors.sidebarBg,
         boxShadow: [
@@ -82,7 +84,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                 ),
-                if (_isSidebarExpanded) ...[
+                if (expanded) ...[
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -111,49 +113,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const Divider(color: AppColors.border),
           // Menu Items
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
               children: [
                 _buildMenuItem(
                   icon: Icons.dashboard_outlined,
                   label: 'لوحة التحكم',
                   index: 0,
+                  closeDrawerOnTap: isCompact,
                 ),
                 _buildMenuItem(
                   icon: Icons.flight_takeoff_outlined,
                   label: 'المطارات',
                   index: 1,
+                  closeDrawerOnTap: isCompact,
                 ),
                 _buildMenuItem(
                   icon: Icons.people_outline,
                   label: 'المديرين',
                   index: 2,
+                  closeDrawerOnTap: isCompact,
                 ),
                 _buildMenuItem(
                   icon: Icons.group_outlined,
                   label: 'لجنة الفحص والتفتيش',
                   index: 3,
+                  closeDrawerOnTap: isCompact,
                 ),
                 _buildMenuItem(
                   icon: Icons.airplanemode_active_outlined,
                   label: 'الطائرات',
                   index: 4,
+                  closeDrawerOnTap: isCompact,
                 ),
                 _buildMenuItem(
                   icon: Icons.assessment_outlined,
                   label: 'التقارير',
                   index: 5,
+                  closeDrawerOnTap: isCompact,
                 ),
                 const Spacer(),
                 _buildMenuItem(
                   icon: Icons.settings_outlined,
                   label: 'الإعدادات',
                   index: 6,
+                  closeDrawerOnTap: isCompact,
                 ),
                 _buildMenuItem(
                   icon: Icons.help_outline,
                   label: 'المساعدة',
                   index: 7,
+                  closeDrawerOnTap: isCompact,
                 ),
               ],
             ),
@@ -167,10 +176,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required IconData icon,
     required String label,
     required int index,
+    bool closeDrawerOnTap = false,
   }) {
     final isSelected = _selectedIndex == index;
     return InkWell(
-      onTap: () => setState(() => _selectedIndex = index),
+      onTap: () {
+        setState(() => _selectedIndex = index);
+        if (closeDrawerOnTap && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -187,7 +202,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   : AppColors.textWhite.withOpacity(0.7),
               size: 24,
             ),
-            if (_isSidebarExpanded) ...[
+            if (_isSidebarExpanded || MediaQuery.of(context).size.width < 1000) ...[
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -206,14 +221,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildMainContent() {
+  Widget _buildMainContent({required bool isCompact}) {
     return Container(
       color: AppColors.background,
-      child: _buildContent(),
+      child: Column(
+        children: [
+          _buildHeader(isCompact: isCompact),
+          Expanded(child: _buildContent()),
+        ],
+      ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader({required bool isCompact}) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -248,10 +268,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           IconButton(
-            onPressed: () =>
-                setState(() => _isSidebarExpanded = !_isSidebarExpanded),
+            onPressed: () {
+              if (isCompact) {
+                Scaffold.of(context).openDrawer();
+              } else {
+                setState(() => _isSidebarExpanded = !_isSidebarExpanded);
+              }
+            },
             icon: Icon(
-              _isSidebarExpanded ? Icons.menu_open : Icons.menu,
+              isCompact ? Icons.menu : (_isSidebarExpanded ? Icons.menu_open : Icons.menu),
               color: AppColors.textSecondary,
             ),
           ),

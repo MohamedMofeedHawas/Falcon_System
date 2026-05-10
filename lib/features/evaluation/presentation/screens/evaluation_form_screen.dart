@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:falcon_system/data/sections/apron_evaluation.dart';
 import 'package:falcon_system/data/sections/apron_section_widget.dart';
@@ -24,12 +23,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_fonts.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
-import '../../../../core/widgets/custom_dropdown.dart';
-import '../../../../core/widgets/custom_text_field.dart';
-import '../../../../core/widgets/loading_overlay.dart';
 import '../../../../data/models/aerodrome.dart';
 import '../../../../data/models/aircraft.dart';
 import '../../../../data/models/airport_manager.dart';
@@ -287,8 +281,9 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
     final managerState = context.read<ManagerCubit>().state;
     final teamState = context.read<TeamCubit>().state;
     final aircraftState = context.read<AircraftCubit>().state;
-    if (aerodromeState is AerodromeLoaded)
+    if (aerodromeState is AerodromeLoaded) {
       _aerodromes = aerodromeState.allAerodromes.cast<Aerodrome>();
+    }
     if (managerState is ManagerLoaded) _managers = managerState.managers;
     if (teamState is TeamLoaded) {
       _heads = teamState.head;
@@ -304,7 +299,8 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
     _selectedManagerName = e.managerName;
     _selectedHeadId = e.headId;
     _selectedHeadName = e.headName;
-    _selectedMemberIds = e.memberIds;
+    final uniqueMemberIds = <String>{};
+    _selectedMemberIds = e.memberIds.where(uniqueMemberIds.add).toList();
     _selectedMemberNames = e.memberNames;
     _selectedAircraftId = e.aircraftId;
     _selectedAircraftName = e.aircraftName;
@@ -399,8 +395,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
       primary: _DS.navyMid,
       onPrimary: Colors.white,
       surface: Colors.white,
-    ),
-    dialogBackgroundColor: Colors.white,
+    ), dialogTheme: DialogThemeData(backgroundColor: Colors.white),
   );
 
   String _formatDateTimeArabic(DateTime dt) {
@@ -548,7 +543,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
   Widget _buildHeader() {
     return AnimatedBuilder(
       animation: _headerAnim,
-      builder: (_, __) => FadeTransition(
+      builder: (_, _) => FadeTransition(
         opacity: _headerAnim,
         child: SlideTransition(
           position:
@@ -855,7 +850,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
   Widget _buildPage(Widget child) {
     return AnimatedBuilder(
       animation: _cardAnim,
-      builder: (_, __) => FadeTransition(
+      builder: (_, _) => FadeTransition(
         opacity: CurvedAnimation(parent: _cardAnim, curve: Curves.easeIn),
         child: SlideTransition(
           position:
@@ -930,8 +925,9 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
       listeners: [
         BlocListener<AerodromeCubit, AerodromeState>(
           listener: (_, s) {
-            if (s is AerodromeLoaded)
+            if (s is AerodromeLoaded) {
               setState(() => _aerodromes = s.allAerodromes.cast());
+            }
           },
         ),
         BlocListener<ManagerCubit, ManagerState>(
@@ -941,11 +937,14 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen>
         ),
         BlocListener<TeamCubit, TeamState>(
           listener: (_, s) {
-            if (s is TeamLoaded)
+            if (s is TeamLoaded) {
               setState(() {
-                _heads = s.head;
-                _members = s.members;
+                _heads = {for (final h in s.head) h.id: h}.values.toList();
+                _members = {
+                  for (final m in s.members) m.id: m,
+                }.values.toList();
               });
+            }
           },
         ),
         BlocListener<AircraftCubit, AircraftState>(
@@ -1449,6 +1448,12 @@ class _ProDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final seenValues = <T?>{};
+    final uniqueItems = items.where((item) => seenValues.add(item.value)).toList();
+    final validValue =
+        value != null && uniqueItems.where((item) => item.value == value).length == 1
+        ? value
+        : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1468,8 +1473,8 @@ class _ProDropdown<T> extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         DropdownButtonFormField<T>(
-          value: value,
-          items: items,
+          initialValue: validValue,
+          items: uniqueItems,
           onChanged: onChanged,
           hint: Text(
             hint,
@@ -1894,7 +1899,7 @@ class _AnimatedScoreCardState extends State<_AnimatedScoreCard>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _scoreAnim,
-      builder: (_, __) => Container(
+      builder: (_, _) => Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           gradient: LinearGradient(

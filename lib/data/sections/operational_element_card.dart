@@ -311,7 +311,7 @@ class _OperationalElementCardState extends State<OperationalElementCard>
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
-                            showValueIndicator: ShowValueIndicator.always,
+                            showValueIndicator: ShowValueIndicator.onDrag,
                           ),
                           child: Slider(
                             value: s.toDouble(),

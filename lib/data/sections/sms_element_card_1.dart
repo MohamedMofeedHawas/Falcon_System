@@ -287,7 +287,7 @@ class _SmsElementCardState extends State<SmsElementCard>
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
-                            showValueIndicator: ShowValueIndicator.always,
+                            showValueIndicator: ShowValueIndicator.onDrag,
                           ),
                           child: Slider(
                             value: s.toDouble(),

@@ -8,6 +8,7 @@ part 'met_element_score.g.dart';
 @HiveType(typeId: 9)
 class MetElementScore extends HiveObject {
   /// مفتاح العنصر (ثابت للبرمجة)
+  @override
   @HiveField(0)
   final String key;
 

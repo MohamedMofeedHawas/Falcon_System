@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:falcon_system/core/constants/app_colors.dart';
@@ -716,7 +716,7 @@ class _AdminSetupScreenState extends State<AdminSetupScreen> {
                   title: Text(AppStrings.haveLicense),
                   value: _hasLicense,
                   onChanged: (v) => setState(() => _hasLicense = v),
-                  activeColor: AppColors.primary,
+                  activeThumbColor: AppColors.primary,
                   tileColor: AppColors.background,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

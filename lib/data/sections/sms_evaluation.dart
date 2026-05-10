@@ -144,7 +144,7 @@ class SmsEvaluation extends HiveObject {
   }
 
   factory SmsEvaluation.fromCompatibilityMap(Map<String, dynamic> map) {
-    SmsElementScore _parse(String key, Map<String, bool> defaultSub) {
+    SmsElementScore parse(String key, Map<String, bool> defaultSub) {
       final raw = map[key];
       if (raw == null) {
         return SmsElementScore(key: key, subCriteriaChecked: defaultSub);
@@ -162,32 +162,32 @@ class SmsEvaluation extends HiveObject {
     }
 
     return SmsEvaluation(
-      safetyPolicy: _parse('safety_policy', {
+      safetyPolicy: parse('safety_policy', {
         'signed_policy_top_mgmt': false,
         'safety_manager_committee': false,
         'safety_budget_allocated': false,
         'just_culture_declared': false,
       }),
-      riskAssessment: _parse('risk_assessment', {
+      riskAssessment: parse('risk_assessment', {
         'risk_matrix_5x5': false,
         'hazard_id_all_areas': false,
         'risk_register_monthly': false,
         'controls_implemented': false,
       }),
-      reportingSystem: _parse('reporting_system', {
+      reportingSystem: parse('reporting_system', {
         'confidential_24_7': false,
         'simple_form_paper_digital': false,
         'reporter_protection': false,
         'feedback_within_2_weeks': false,
       }),
-      safetyPerformance: _parse('safety_performance', {
+      safetyPerformance: parse('safety_performance', {
         'spis_defined': false,
         'quarterly_targets': false,
         'monthly_safety_report': false,
         'internal_audit_6m': false,
         'corrective_actions_tracked': false,
       }),
-      smsTraining: _parse('sms_training', {
+      smsTraining: parse('sms_training', {
         'all_staff_mandatory': false,
         'advanced_mgmt_training': false,
         'training_records_updated': false,

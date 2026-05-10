@@ -164,7 +164,7 @@ class MetEvaluation extends HiveObject {
 
   /// إنشاء من Map<String, dynamic>
   factory MetEvaluation.fromCompatibilityMap(Map<String, dynamic> map) {
-    MetElementScore _parse(String key, Map<String, bool> defaultSub) {
+    MetElementScore parse(String key, Map<String, bool> defaultSub) {
       final raw = map[key];
       if (raw == null) {
         return MetElementScore(key: key, subCriteriaChecked: defaultSub);
@@ -182,34 +182,34 @@ class MetEvaluation extends HiveObject {
     }
 
     return MetEvaluation(
-      aviationReports: _parse('aviation_reports', {
+      aviationReports: parse('aviation_reports', {
         'metar_available': false,
         'speci_issued': false,
         'taf_available': false,
         'reports_reach_tower': false,
       }),
-      basicEquipment: _parse('basic_equipment', {
+      basicEquipment: parse('basic_equipment', {
         'rvr_3_sensors': false,
         'anemometer_both_ends': false,
         'temp_humidity_qnh': false,
         'ceilometer': false,
       }),
-      advancedEquipment: _parse('advanced_equipment', {
+      advancedEquipment: parse('advanced_equipment', {
         'weather_radar': false,
         'lightning_detection': false,
         'forward_scatter': false,
         'upper_wind_system': false,
       }),
-      informationTransfer: _parse('information_transfer', {
+      informationTransfer: parse('information_transfer', {
         'display_in_tower_rffs': false,
         'rvr_via_atis_radio': false,
         'aftn_or_secure_net': false,
       }),
-      maintenanceCalibration: _parse('maintenance_calibration', {
+      maintenanceCalibration: parse('maintenance_calibration', {
         'rvr_calibrated_12m': false,
         'maintenance_records': false,
       }),
-      aviationForecasts: _parse('aviation_forecasts', {
+      aviationForecasts: parse('aviation_forecasts', {
         'crosswind_headwind_forecast': false,
         'storm_sand_ice_warnings': false,
         'turbulence_approach': false,

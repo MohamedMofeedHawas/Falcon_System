@@ -69,6 +69,31 @@ class HiveService {
   static void setCurrentAdminEmail(String email) =>
       _currentAdminEmail = email.trim().toLowerCase();
 
+  static String? get currentAdminScope {
+    final email = _currentAdminEmail?.trim().toLowerCase();
+    if (email == null || email.isEmpty) return null;
+    return email;
+  }
+
+  static String scopedKey(String rawId) {
+    final scope = currentAdminScope;
+    if (scope == null) return rawId;
+    return '$scope::$rawId';
+  }
+
+  static String unscopedId(String scopedOrRaw) {
+    final idx = scopedOrRaw.indexOf('::');
+    if (idx == -1) return scopedOrRaw;
+    return scopedOrRaw.substring(idx + 2);
+  }
+
+  static bool isOwnedByCurrentAdmin(dynamic key) {
+    final scope = currentAdminScope;
+    if (scope == null) return true;
+    final str = key?.toString() ?? '';
+    return str.startsWith('$scope::');
+  }
+
   // ══════════════════════════════════════════════════════════════════════════
   // INIT
   // ══════════════════════════════════════════════════════════════════════════
@@ -429,6 +454,17 @@ class HiveService {
     for (final k in adminBox.keys) {
       final p = adminBox.get(k);
       if (p is AdminProfile && p.email.trim().toLowerCase() == key) return p;
+    }
+    return null;
+  }
+
+  static AdminProfile? getAdminByNationalId(String nationalId) {
+    if (!Hive.isBoxOpen(HiveKeys.adminProfileBox)) return null;
+    final target = nationalId.trim();
+    if (target.isEmpty) return null;
+    for (final k in adminBox.keys) {
+      final p = adminBox.get(k);
+      if (p is AdminProfile && p.nationalId.trim() == target) return p;
     }
     return null;
   }

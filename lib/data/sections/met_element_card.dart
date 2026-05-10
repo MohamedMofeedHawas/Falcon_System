@@ -238,7 +238,7 @@ class _MetElementCardState extends State<MetElementCard>
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
-                            showValueIndicator: ShowValueIndicator.always,
+                            showValueIndicator: ShowValueIndicator.onDrag,
                           ),
                           child: Slider(
                             value: s.toDouble(),
